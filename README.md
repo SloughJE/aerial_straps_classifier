@@ -1,5 +1,14 @@
-# Structure
+# Running the Pipelines
 
+- load raw data
+    - in integrated terminal run:
+    - ```python run_pipelines.py --load_data```
+
+Create new pipelines following this method
+
+# Directory Structure
+
+```
 ├── README.md          <- The top-level README for developers using this project.
 ├── data
 │   ├── raw            <- The original, immutable data dump.
@@ -32,3 +41,6 @@
 │   │
 │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
 │       └── visualize.py
+│
+└──params.yml          <- parameters 
+```
