@@ -45,4 +45,4 @@ Create new pipelines following this method
 └──params.yml          <- parameters 
 ```
 
-This template is inspired from the [cookiecutter data science template](https://github.com/drivendata/cookiecutter-data-science). Their template has a lot of stuff we don't use. 
+This template is inspired by the [cookiecutter data science template](https://github.com/drivendata/cookiecutter-data-science). Their template has a lot of stuff we don't use. 
