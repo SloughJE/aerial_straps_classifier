@@ -4,7 +4,11 @@
     - in integrated terminal run:
     - ```python run_pipelines.py --load_data```
 
-Create new pipelines following this method
+Create new pipelines following this method, adding to run_pipelines.py
+
+# Codespace 
+You can also open this project in codespace. On github, look at the green button above, ```use this template```, click on it and ```open in a codespace```. It will open this project in a web-based VSCode environment and build the container. You can run the notebook or pipelines here.
+
 
 # Directory Structure
 
