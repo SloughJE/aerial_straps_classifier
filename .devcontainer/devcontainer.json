@@ -8,7 +8,7 @@
 	"dockerFile": "../Dockerfile",
 
 	// extensions
-	"extensions": ["ms-python.python", "ms-toosai.jupyter"]
+	"extensions": ["ms-python.python", "ms-toolsai.jupyter"]
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},

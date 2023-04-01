@@ -1,16 +1,15 @@
-FROM ubuntu:20.04
+FROM python:3.8-slim-buster
 
 RUN mkdir /code
 WORKDIR /code
 
-ENV PYTHONBUFFERED 1
+ENV PYTHONUNBUFFERED 1
 
-RUN apt-get -y update
-RUN apt-get -y install bc curl gnupg2 jq less python3 python3-pip unzip wget
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
-RUN apt-get -y install git
+RUN apt-get -y update && \
+    apt-get -y install bc curl gnupg2 jq less unzip wget libglib2.0-0 git gcc python3-dev libgl1-mesa-glx && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt /code/
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt

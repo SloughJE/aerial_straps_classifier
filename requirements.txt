@@ -5,3 +5,7 @@ matplotlib
 seaborn
 scikit-learn
 pyaml
+opencv-python-headless
+mediapipe
+protobuf<=3.20.*
+plotly
