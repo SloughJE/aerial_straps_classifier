@@ -7,7 +7,7 @@
 This code provides functionalities to reduce the quality of videos for quicker labeling and to label frames of videos. The functionalities include:
 
 ### 1. **Reduce Video Quality**
-Reduces the quality of videos in a given directory to speed up labeling, specifically it reduces the lag from the time a key is pressed until the video skips to the next frame. Already processed videos will be skipped.
+Reduces the quality of videos in a given directory to speed up labeling, specifically it reduces the lag from the time a key is pressed until the video skips to the next frame. Already processed videos will be skipped. Videos are named the same as the originals but are placed in this different directory to distinguish them.
 - **Reduction Factor**: An integer that specifies the factor by which the dimensions of the videos will be reduced. For example, a reduction factor of 4 would reduce both the width and height of the video to 1/4th of their original size.
 
 ### 2. **Video Frame Labeling**
@@ -16,7 +16,7 @@ The `label_frames` and `run_labeling` functions are responsible for allowing the
 - **Labels Mapping**: The labels that can be applied to frames are configured in the `params.yaml` file. This mapping connects a keypress to a specific label. For example, pressing 'm' will label a frame as 'meathook.'
 - **Skip Frames**: A configurable number of frames to skip between labeled frames. The same label is applied to skipped frames, which allows labeling of video segments rather than individual frames.
 - **Input Video Directory**: The directory containing the videos that need to be labeled. This could be the original videos or the reduced-quality videos.
-- **Output Directory**: The directory where the labeled data (frame number and corresponding label) will be saved in CSV files.
+- **Output Directory**: The directory where the labeled data will be saved. A separate CSV file is output for each video file, named the same as the video. For example, if the video is named "example.mov", the CSV file will be named "example.csv".
 
 The process goes as follows:
 
