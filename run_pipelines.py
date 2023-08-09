@@ -1,12 +1,9 @@
-import sys 
-import yaml
+import sys
 import argparse
-
+import yaml
 from src.data.load_data import load_raw_data
-#from src.features.make_features import *
-#from src.models import predict_model
-#from src.models import train_model
-# etc
+from src.labeling.label import run_labeling, reduce_video_size
+
 
 if __name__ == "__main__":
 
@@ -18,6 +15,18 @@ if __name__ == "__main__":
         action="store_true"
     )
      
+    parser.add_argument(
+        "--label_data",
+        help="label raw data",
+        action="store_true"
+    )
+
+    parser.add_argument(
+        "--reduce_quality",
+        help="reduce video quality for quicker labeling",
+        action="store_true"
+    )
+
     parser.add_argument(
         "--make_features",
         help="make features",
@@ -39,3 +48,12 @@ if __name__ == "__main__":
                 'data/interim/processed.csv'
             )
 
+        if args.reduce_quality:
+            reduce_video_size(
+                params['video_processing']
+            )
+
+        if args.label_data:
+            run_labeling(
+                params['labeling']
+            )
