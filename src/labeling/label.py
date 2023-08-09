@@ -81,13 +81,13 @@ def run_labeling(params: dict) -> None:
     Parameters:
     params (dict): Dictionary containing the following key-value pairs:
         - 'input_video_dir': Directory containing video files to be labeled.
-        - 'output_video_dir': Directory where labeled CSV files will be saved.
+        - 'output_dir': Directory where labeled CSV files will be saved.
         - 'skip_frames': Number of frames to skip between labeled frames. 
         Same label is applied to skipped frames.
     """
 
     input_video_dir = params['input_video_dir']
-    output_video_dir = params['output_video_dir']
+    output_dir = params['output_dir']
     skip_frames = params['skip_frames']
 
     video_files = [f for f in os.listdir(input_video_dir) if f.endswith(".mov") or f.endswith(".mp4")]
@@ -99,7 +99,7 @@ def run_labeling(params: dict) -> None:
         video_path = os.path.join(input_video_dir, filename)
         video_name = os.path.splitext(filename)[0]
 
-        output_file = os.path.join(output_video_dir, video_name) + ".csv"
+        output_file = os.path.join(output_dir, video_name) + ".csv"
         
         # Check if this video has already been labeled
         if os.path.exists(output_file):
