@@ -51,7 +51,7 @@ labeling:
     b: back lever
   skip_frames: 60
   input_video_dir: data/raw/reduced/
-  output_video_dir: data/interim/
+  output_dir: data/interim/
 ```
 
 ### Usage
