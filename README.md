@@ -1,13 +1,86 @@
 # Running the Pipelines
 
-- load raw data
-    - in integrated terminal run:
-    - ```python run_pipelines.py --load_data```
+## Video Processing and Labeling
 
-Create new pipelines following this method, adding to run_pipelines.py
+### Overview
 
-# Codespace 
-You can also open this project in codespace. On github, look at the green button above, ```use this template```, click on it and ```open in a codespace```. It will open this project in a web-based VSCode environment and build the container. You can run the notebook or pipelines here.
+This code provides functionalities to reduce the quality of videos for quicker labeling and to label frames of videos. The functionalities include:
+
+### 1. **Reduce Video Quality**
+Reduces the quality of videos in a given directory to speed up labeling, specifically it reduces the lag from the time a key is pressed until the video skips to the next frame. Already processed videos will be skipped.
+- **Reduction Factor**: An integer that specifies the factor by which the dimensions of the videos will be reduced. For example, a reduction factor of 4 would reduce both the width and height of the video to 1/4th of their original size.
+
+### 2. **Video Frame Labeling**
+The `label_frames` and `run_labeling` functions are responsible for allowing the user to label frames of videos. Here's how it operates:
+
+- **Labels Mapping**: The labels that can be applied to frames are configured in the `params.yaml` file. This mapping connects a keypress to a specific label. For example, pressing 'm' will label a frame as 'meathook.'
+- **Skip Frames**: A configurable number of frames to skip between labeled frames. The same label is applied to skipped frames, which allows labeling of video segments rather than individual frames.
+- **Input Video Directory**: The directory containing the videos that need to be labeled. This could be the original videos or the reduced-quality videos.
+- **Output Directory**: The directory where the labeled data (frame number and corresponding label) will be saved in CSV files.
+
+The process goes as follows:
+
+1. The video is played frame by frame (skipping the set number of frames).
+2. The user is prompted to label the current frame by pressing a key that corresponds to one of the configured labels.
+3. The same label is automatically applied to the next 'skip_frames' number of frames.
+4. The labeling data is saved to a CSV file, where each row contains the frame number, the filename, and the label.
+
+These functions make it efficient to label video data for machine learning tasks or other analyses, especially when the videos contain continuous segments with the same characteristics.
+
+> **Important Note**: It is recommended to run this part of the code outside of the integrated terminal, such as in the Mac Terminal. Running video playback and labeling within an integrated terminal like the one in VSCode may lead to issues. You may also need to install some additional packages to support video playback in your terminal environment.
+
+### Configuration
+
+You can configure the video processing and labeling process through the `params.yaml` file. The key-value pairs include directories for input and output videos, reduction factor for video size, labels mapping, and number of frames to skip during labeling.
+
+#### Example `params.yaml`
+
+```yaml
+video_processing:
+  input_video_dir: data/raw/original/
+  output_video_dir: data/raw/reduced/
+  reduction_factor: 4
+
+labeling:
+  labels:
+    m: meathook
+    n: nutcracker
+    l: l hang
+    o: other_pose
+    r: reverse meathook
+    b: back lever
+  skip_frames: 60
+  input_video_dir: data/raw/reduced/
+  output_video_dir: data/interim/
+```
+
+### Usage
+
+To use this code, you can run the `run_pipelines.py` script with the following arguments:
+
+- `--reduce_quality`: Reduce video quality for quicker labeling.
+- `--label_data`: Label raw data.
+
+Example commands:
+
+```bash
+python run_pipelines.py --reduce_quality
+python run_pipelines.py --label_data 
+```
+
+### Functions
+
+#### `reduce_video_size(params: dict) -> None`
+
+Reduces the video quality in the given directory. The reduction factor can be specified in the `params` dictionary.
+
+#### `label_frames(params: dict, video_path: str, skip_frames: int) -> list`
+
+Allows labeling frames from the specified video file.
+
+#### `run_labeling(params: dict) -> None`
+
+Executes the labeling process for all video files in the specified input directory and saves the labels to CSV files.
 
 
 # Directory Structure
@@ -49,4 +122,7 @@ You can also open this project in codespace. On github, look at the green button
 └──params.yml          <- parameters 
 ```
 
-This template is inspired by the [cookiecutter data science template](https://github.com/drivendata/cookiecutter-data-science). Their template has a lot of stuff we don't use. 
+Notes:
+Some models had to be manually downloaded. So I download to models/
+and the cp to the correct place (based on the download errors)
+cp models/pose_landmark_heavy.tflite /usr/local/lib/python3.8/site-packages/mediapipe/modules/pose_landmark
