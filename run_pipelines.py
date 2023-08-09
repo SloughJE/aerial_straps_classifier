@@ -2,7 +2,8 @@ import sys
 import argparse
 import yaml
 from src.data.load_data import load_raw_data
-from src.labeling.label import run_labeling, reduce_video_size
+from src.labeling.label import run_labeling
+from src.labeling.video_processing import reduce_video_size
 
 
 if __name__ == "__main__":
@@ -32,7 +33,6 @@ if __name__ == "__main__":
         help="make features",
         action="store_true"
     )
-    # etc
 
     args = parser.parse_args()
 
