@@ -7,10 +7,11 @@ labeling:
   labels:
     m: meathook
     n: nutcracker
-    l: l hang
-    o: other_pose
+    l: l-hang
+    o: other pose or transition
     r: reverse meathook
     b: back lever
+    f: front lever
   skip_frames: 60
   input_video_dir: data/raw/reduced/
   output_dir: data/interim/
