@@ -4,7 +4,7 @@ import yaml
 from src.data.load_data import load_raw_data
 from src.labeling.label import run_labeling
 from src.labeling.video_processing import reduce_video_size
-
+from src.features.make_features import extract_landmarks_and_features
 
 if __name__ == "__main__":
 
@@ -56,4 +56,9 @@ if __name__ == "__main__":
         if args.label_data:
             run_labeling(
                 params['labeling']
+            )
+        
+        if args.make_features:
+            extract_landmarks_and_features(
+                params['features']
             )
