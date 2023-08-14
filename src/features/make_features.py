@@ -148,3 +148,5 @@ def extract_landmarks_and_features(params: dict):
         # Save the DataFrame to the CSV file for features
         print(f"Features extracted and saved to {csv_file_path_features}")
         df_features.to_csv(csv_file_path_features, index=False)
+
+        # need to add framenumber to features, and filename to both, and a progress thing like in the video processing function
