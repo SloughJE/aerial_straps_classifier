@@ -15,3 +15,8 @@ labeling:
   skip_frames: 60
   input_video_dir: data/raw/reduced/
   output_dir: data/interim/
+
+features:
+  input_video_dir: data/raw/reduced/
+  output_video_dir: data/processed/reduced/
+  save_directory: data/processed/features

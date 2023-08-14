@@ -76,21 +76,7 @@ def extract_landmarks(input_video, output_video, save_directory):
     return df_landmarks
 
 
-def calculate_2d_angle(a, b, c):
-
-    a = np.array([a[0], a[1]])
-    b = np.array([b[0], b[1]])
-    c = np.array([c[0], c[1]])
-
-    radians = np.arctan2(c[1] - b[1], c[0] - b[0]) - np.arctan2(a[1] - b[1], a[0] - b[0])
-    angle = np.abs(radians * 180.0 / np.pi)
-
-    if angle > 180.0:
-        angle = 360 - angle
-
-    return angle
-
-def calculate_2d_angle(a, b, c):
+def calculate_2d_angle( a, b, c):
     a = np.array([a[0], a[1]])
     b = np.array([b[0], b[1]])
     c = np.array([c[0], c[1]])
@@ -98,13 +84,10 @@ def calculate_2d_angle(a, b, c):
     radians = np.arctan2(c[1] - b[1], c[0] - b[0]) - np.arctan2(a[1] - b[1], a[0] - b[0])
     angle = radians * 180.0 / np.pi
 
-    if angle > 180:
-        angle -= 360
-    elif angle < -180:
+    if angle < 0:
         angle += 360
 
-    return -angle
-
+    return angle
 
 
 def extract_angles(row):
@@ -112,17 +95,16 @@ def extract_angles(row):
 
     # Define the landmarks for each angle
     angles_definitions = {
-        'shoulder_angle_left': ('LEFT_HIP', 'LEFT_SHOULDER', 'LEFT_ELBOW'),
-        'shoulder_angle_right': ('RIGHT_HIP', 'RIGHT_SHOULDER', 'RIGHT_ELBOW'),
-        'elbow_angle_left': ('LEFT_SHOULDER', 'LEFT_ELBOW', 'LEFT_WRIST'),
+        'elbow_angle_left': ('LEFT_SHOULDER', 'LEFT_ELBOW', 'LEFT_WRIST'), 
         'elbow_angle_right': ('RIGHT_SHOULDER', 'RIGHT_ELBOW', 'RIGHT_WRIST'),
-        'hip_angle_left': ('LEFT_KNEE', 'LEFT_HIP', 'LEFT_SHOULDER'),
-        'hip_angle_right': ('RIGHT_KNEE', 'RIGHT_HIP', 'RIGHT_SHOULDER'),
-        'knee_angle_left': ('LEFT_HIP', 'LEFT_KNEE', 'LEFT_ANKLE'),
-        'knee_angle_right': ('RIGHT_HIP', 'RIGHT_KNEE', 'RIGHT_ANKLE'),
+        'shoulder_angle_left': ('LEFT_ELBOW', 'LEFT_SHOULDER', 'LEFT_HIP'),
+        'shoulder_angle_right': ('RIGHT_ELBOW', 'RIGHT_SHOULDER', 'RIGHT_HIP'),
+        'hip_angle_left': ('LEFT_SHOULDER', 'LEFT_HIP', 'LEFT_KNEE'),
+        'hip_angle_right': ('RIGHT_SHOULDER', 'RIGHT_HIP', 'RIGHT_KNEE'),
+        'knee_angle_left': ('LEFT_ANKLE', 'LEFT_KNEE', 'LEFT_HIP'),
+        'knee_angle_right': ('RIGHT_ANKLE', 'RIGHT_KNEE', 'RIGHT_HIP'),
         'spine_angle': ('LEFT_HIP', 'RIGHT_HIP', 'HEAD'),
         'torso_angle': ('LEFT_HIP', 'RIGHT_HIP', 'NECK'),
-        # You can manually define the midpoint for 'KNEES' if needed
     }
 
     # Calculate each angle
@@ -137,7 +119,12 @@ def extract_angles(row):
     return pd.Series(angles)
 
 
-def extract_landmarks_and_features(input_directory, output_directory, save_directory):
+def extract_landmarks_and_features(params: dict):
+
+    input_directory = params['input_video_dir']
+    output_directory = params['output_video_dir']
+    save_directory = params['save_directory']
+
     # Get a list of all video files in the input directory
     video_files = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f)) and f.endswith(('.mp4', '.mov'))]
 
