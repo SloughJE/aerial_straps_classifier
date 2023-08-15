@@ -72,6 +72,8 @@ def extract_landmarks(input_video, output_video, save_directory):
     df_landmarks['NECK_x'] = (df_landmarks['LEFT_SHOULDER_x'] + df_landmarks['RIGHT_SHOULDER_x']) / 2
     df_landmarks['NECK_y'] = (df_landmarks['LEFT_SHOULDER_y'] + df_landmarks['RIGHT_SHOULDER_y']) / 2
     df_landmarks['NECK_z'] = (df_landmarks['LEFT_SHOULDER_z'] + df_landmarks['RIGHT_SHOULDER_z']) / 2
+    
+    df_landmarks['video_frame'] = df_landmarks['video_frame'].astype(int)
 
     return df_landmarks
 
@@ -128,25 +130,32 @@ def extract_landmarks_and_features(params: dict):
     # Get a list of all video files in the input directory
     video_files = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f)) and f.endswith(('.mp4', '.mov'))]
 
-    for video_file in video_files:
+    # Filter out videos that have already been processed
+    videos_to_process = [filename for filename in video_files if not os.path.exists(os.path.join(save_directory, os.path.splitext(filename)[0] + '_landmarks.csv'))]
+    total_videos = len(videos_to_process)
+    already_processed = len(video_files) - total_videos
+    print(f"Total number of videos to process: {total_videos}.\nAlready processed {already_processed}.")
+
+    for idx, video_file in enumerate(videos_to_process):
         input_video = os.path.join(input_directory, video_file)
-        output_video = os.path.join(output_directory, video_file) # You can also modify this based on your requirement
+        output_video = os.path.join(output_directory, video_file)
         print(f"Processing video: {input_video}")
 
         df_landmarks = extract_landmarks(input_video, output_video, save_directory)
-        # Extract the name of the video file (without extension)
+        
         video_name = os.path.splitext(os.path.basename(input_video))[0]
-        # Combine the save directory with the video name to create the CSV file name
         csv_file_path = os.path.join(save_directory, f'{video_name}_landmarks.csv')
-        # Save the DataFrame to the CSV file
-        print(f"landmarks extracted and saved to {csv_file_path}")
+        print(f"Landmarks extracted and saved to {csv_file_path}")
+        df_landmarks['filename'] = video_file
         df_landmarks.to_csv(csv_file_path, index=False)
 
         df_features = df_landmarks.apply(extract_angles, axis=1)
-        # Combine the save directory with the video name to create the CSV file name for features
+        df_features['filename'] = video_file
+        df_features['video_frame'] = df_landmarks['video_frame'] # Copying frame_number from df_landmarks to df_features
         csv_file_path_features = os.path.join(save_directory, f'{video_name}_features.csv')
-        # Save the DataFrame to the CSV file for features
         print(f"Features extracted and saved to {csv_file_path_features}")
         df_features.to_csv(csv_file_path_features, index=False)
 
-        # need to add framenumber to features, and filename to both, and a progress thing like in the video processing function
+        print(f"Processed {video_file} ({idx + 1} of {total_videos})")
+
+    print(f"{total_videos} video(s) processed successfully.")
