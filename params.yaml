@@ -1,6 +1,6 @@
 video_processing:
   input_video_dir: data/raw/original/
-  output_video_dir: data/raw/reduced/
+  output_video_dir: data/interim/reduced/
   reduction_factor: 4
 
 labeling:
@@ -13,10 +13,11 @@ labeling:
     b: back lever
     f: front lever
   skip_frames: 60
-  input_video_dir: data/raw/reduced/
-  output_dir: data/interim/
+  input_video_dir: data/interim/reduced/
+  output_dir: data/interim/labeled/
 
 features:
-  input_video_dir: data/raw/reduced/
-  output_video_dir: data/processed/reduced/
-  save_directory: data/processed/features
+  input_video_dir: data/interim/reduced/
+  output_video_dir: data/processed/videos/
+  features_directory: data/processed/features
+  write_video: False

@@ -6,15 +6,15 @@ import pandas as pd
 import numpy as np
 
 
-# Process the video file.
-def extract_landmarks(input_video, output_video, save_directory):
+def extract_landmarks(input_video, output_video, write_video=True):
 
     cap = cv2.VideoCapture(input_video)
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    
-    out = cv2.VideoWriter(output_video, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
+
+    # Only create a VideoWriter if we intend to write the video
+    out = cv2.VideoWriter(output_video, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height)) if write_video else None
 
     # Define the columns for the DataFrame
     columns = ['video_frame']
@@ -57,18 +57,20 @@ def extract_landmarks(input_video, output_video, save_directory):
                 # Append the features to the DataFrame
                 df_landmarks.loc[frame_count] = features
 
-            out.write(blank_frame)
+            # Write the frame to the video file if write_video is True
+            if write_video:
+                out.write(blank_frame)
             frame_count += 1
 
     cap.release()
-    out.release()
+    if write_video:
+        out.release()
 
-    # Adding mid point between ears for HEAD
+    # Compute additional features
     df_landmarks['HEAD_x'] = (df_landmarks['LEFT_EAR_x'] + df_landmarks['RIGHT_EAR_x']) / 2
     df_landmarks['HEAD_y'] = (df_landmarks['LEFT_EAR_y'] + df_landmarks['RIGHT_EAR_y']) / 2
     df_landmarks['HEAD_z'] = (df_landmarks['LEFT_EAR_z'] + df_landmarks['RIGHT_EAR_z']) / 2
 
-    # Adding mid point between shoulders for NECK, close enough?
     df_landmarks['NECK_x'] = (df_landmarks['LEFT_SHOULDER_x'] + df_landmarks['RIGHT_SHOULDER_x']) / 2
     df_landmarks['NECK_y'] = (df_landmarks['LEFT_SHOULDER_y'] + df_landmarks['RIGHT_SHOULDER_y']) / 2
     df_landmarks['NECK_z'] = (df_landmarks['LEFT_SHOULDER_z'] + df_landmarks['RIGHT_SHOULDER_z']) / 2
@@ -76,6 +78,7 @@ def extract_landmarks(input_video, output_video, save_directory):
     df_landmarks['video_frame'] = df_landmarks['video_frame'].astype(int)
 
     return df_landmarks
+
 
 
 def calculate_2d_angle( a, b, c):
@@ -125,13 +128,13 @@ def extract_landmarks_and_features(params: dict):
 
     input_directory = params['input_video_dir']
     output_directory = params['output_video_dir']
-    save_directory = params['save_directory']
-
+    features_directory = params['features_directory']
+    write_video = params['write_video']
     # Get a list of all video files in the input directory
     video_files = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f)) and f.endswith(('.mp4', '.mov'))]
 
     # Filter out videos that have already been processed
-    videos_to_process = [filename for filename in video_files if not os.path.exists(os.path.join(save_directory, os.path.splitext(filename)[0] + '_landmarks.csv'))]
+    videos_to_process = [filename for filename in video_files if not os.path.exists(os.path.join(features_directory, os.path.splitext(filename)[0] + '_landmarks.csv'))]
     total_videos = len(videos_to_process)
     already_processed = len(video_files) - total_videos
     print(f"Total number of videos to process: {total_videos}.\nAlready processed {already_processed}.")
@@ -141,10 +144,10 @@ def extract_landmarks_and_features(params: dict):
         output_video = os.path.join(output_directory, video_file)
         print(f"Processing video: {input_video}")
 
-        df_landmarks = extract_landmarks(input_video, output_video, save_directory)
+        df_landmarks = extract_landmarks(input_video, output_video, write_video)
         
         video_name = os.path.splitext(os.path.basename(input_video))[0]
-        csv_file_path = os.path.join(save_directory, f'{video_name}_landmarks.csv')
+        csv_file_path = os.path.join(features_directory, f'{video_name}_landmarks.csv')
         print(f"Landmarks extracted and saved to {csv_file_path}")
         df_landmarks['filename'] = video_file
         df_landmarks.to_csv(csv_file_path, index=False)
@@ -152,10 +155,38 @@ def extract_landmarks_and_features(params: dict):
         df_features = df_landmarks.apply(extract_angles, axis=1)
         df_features['filename'] = video_file
         df_features['video_frame'] = df_landmarks['video_frame'] # Copying frame_number from df_landmarks to df_features
-        csv_file_path_features = os.path.join(save_directory, f'{video_name}_features.csv')
+        csv_file_path_features = os.path.join(features_directory, f'{video_name}_features.csv')
         print(f"Features extracted and saved to {csv_file_path_features}")
         df_features.to_csv(csv_file_path_features, index=False)
 
         print(f"Processed {video_file} ({idx + 1} of {total_videos})")
 
     print(f"{total_videos} video(s) processed successfully.")
+
+
+def combine_csv_files(directory: str) -> pd.DataFrame:
+    """
+    Combine CSV files in the given directory with filenames ending in '_features.csv' into a single DataFrame.
+
+    Args:
+        directory (str): Path to the directory containing the CSV files.
+
+    Returns:
+        pd.DataFrame: A DataFrame combining all the CSV files.
+    """
+
+    # Get list of all CSV files in the directory with filenames ending in '_features.csv'
+    csv_files = [f for f in os.listdir(directory) if f.endswith('_features.csv')]
+
+    # Create a list of dataframes by reading each CSV file
+    list_of_dfs = [pd.read_csv(os.path.join(directory, f)) for f in csv_files]
+
+    # Concatenate all dataframes into a single dataframe
+    combined_df = pd.concat(list_of_dfs, ignore_index=True)
+
+    return combined_df
+
+# Example usage:
+#directory = "processed/features"
+#combined_df = combine_csv_files(directory)
+#combined_df.to_csv("processed/combined_features.csv", index=False)
