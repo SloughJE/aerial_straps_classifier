@@ -3,7 +3,7 @@ import argparse
 import yaml
 from src.data.label import run_labeling
 from src.data.video_processing import reduce_video_size
-from src.features.make_features import extract_landmarks_and_features
+from src.features.make_features import extract_landmarks_and_features, combine_csv_files
 
 if __name__ == "__main__":
 
@@ -27,6 +27,12 @@ if __name__ == "__main__":
         action="store_true"
     )
 
+    parser.add_argument(
+        "--combine_feature_csv",
+        help="combine feature csv",
+        action="store_true"
+    )
+
     args = parser.parse_args()
 
     if len(sys.argv) == 1:
@@ -47,5 +53,10 @@ if __name__ == "__main__":
         
         if args.make_features:
             extract_landmarks_and_features(
+                params['features']
+            )
+
+        if args.combine_feature_csv:
+            combine_csv_files(
                 params['features']
             )

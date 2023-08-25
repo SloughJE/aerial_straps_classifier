@@ -128,7 +128,7 @@ def extract_landmarks_and_features(params: dict):
 
     input_directory = params['input_video_dir']
     output_directory = params['output_video_dir']
-    features_directory = params['features_directory']
+    features_directory = params['interim_features_directory']
     write_video = params['write_video']
     # Get a list of all video files in the input directory
     video_files = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f)) and f.endswith(('.mp4', '.mov'))]
@@ -164,7 +164,7 @@ def extract_landmarks_and_features(params: dict):
     print(f"{total_videos} video(s) processed successfully.")
 
 
-def combine_csv_files(directory: str) -> pd.DataFrame:
+def combine_csv_files(params: dict) -> pd.DataFrame:
     """
     Combine CSV files in the given directory with filenames ending in '_features.csv' into a single DataFrame.
 
@@ -174,17 +174,22 @@ def combine_csv_files(directory: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A DataFrame combining all the CSV files.
     """
+    interim_features_directory = params['interim_features_directory']
+    final_features_directory = params['final_features_directory']
 
     # Get list of all CSV files in the directory with filenames ending in '_features.csv'
-    csv_files = [f for f in os.listdir(directory) if f.endswith('_features.csv')]
-
+    csv_files = [f for f in os.listdir(interim_features_directory) if f.endswith('_features.csv')]
+    print(f"combining {len(csv_files)} interim feature files")
     # Create a list of dataframes by reading each CSV file
-    list_of_dfs = [pd.read_csv(os.path.join(directory, f)) for f in csv_files]
+    list_of_dfs = [pd.read_csv(os.path.join(interim_features_directory, f)) for f in csv_files]
 
     # Concatenate all dataframes into a single dataframe
     combined_df = pd.concat(list_of_dfs, ignore_index=True)
+    filepath_features = os.path.join(final_features_directory,"final_features.csv")
+    combined_df.to_csv(filepath_features,index=False)
 
-    return combined_df
+    print(f"final features combined and written to {filepath_features}")
+    
 
 # Example usage:
 #directory = "processed/features"
