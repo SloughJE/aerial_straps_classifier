@@ -164,34 +164,50 @@ def extract_landmarks_and_features(params: dict):
     print(f"{total_videos} video(s) processed successfully.")
 
 
-def combine_csv_files(params: dict) -> pd.DataFrame:
+def combine_csv_files(params: dict) -> None:
     """
-    Combine CSV files in the given directory with filenames ending in '_features.csv' into a single DataFrame.
+    Combine CSV files in the given directory with filenames ending in '_features.csv' 
+    and merge with labeled data to create the final features dataframe.
 
     Args:
-        directory (str): Path to the directory containing the CSV files.
+        params (dict): Dictionary containing the following key-value pairs:
+            - 'interim_features_directory': Directory containing interim feature CSV files.
+            - 'final_features_directory': Directory where the final features CSV will be saved.
+            - 'labeled_dir': Directory containing labeled CSV files.
 
     Returns:
-        pd.DataFrame: A DataFrame combining all the CSV files.
+        None
     """
     interim_features_directory = params['interim_features_directory']
     final_features_directory = params['final_features_directory']
+    labeled_dir = params['labeled_dir']
 
-    # Get list of all CSV files in the directory with filenames ending in '_features.csv'
+    # Get list of all CSV files in the interim_features_directory with filenames ending in '_features.csv'
     csv_files = [f for f in os.listdir(interim_features_directory) if f.endswith('_features.csv')]
-    print(f"combining {len(csv_files)} interim feature files")
+    print(f"Combining {len(csv_files)} interim feature files")
+    
     # Create a list of dataframes by reading each CSV file
     list_of_dfs = [pd.read_csv(os.path.join(interim_features_directory, f)) for f in csv_files]
 
     # Concatenate all dataframes into a single dataframe
     combined_df = pd.concat(list_of_dfs, ignore_index=True)
-    filepath_features = os.path.join(final_features_directory,"final_features.csv")
-    combined_df.to_csv(filepath_features,index=False)
 
-    print(f"final features combined and written to {filepath_features}")
-    
+    # Load all labeled CSV files
+    labeled_csv_files = [f for f in os.listdir(labeled_dir) if f.endswith('_labeled.csv')]
+    labeled_dfs = [pd.read_csv(os.path.join(labeled_dir, f)) for f in labeled_csv_files]
+    labeled_df = pd.concat(labeled_dfs, ignore_index=True)
 
-# Example usage:
-#directory = "processed/features"
-#combined_df = combine_csv_files(directory)
-#combined_df.to_csv("processed/combined_features.csv", index=False)
+    # Merge the labeled data into the final features dataframe
+    final_df = pd.merge(combined_df, labeled_df, on=['filename', 'video_frame'], how='left')
+
+    # Print out the count of rows per unique label
+    label_counts = final_df['label'].value_counts()
+    print("\nNumber of rows per label:")
+    for label, count in label_counts.items():
+        print(f"{label}: {count}")
+
+    filepath_features = os.path.join(final_features_directory, "final_features.csv")
+    final_df.to_csv(filepath_features, index=False)
+
+    print(f"\nFinal features combined with labels and written to {filepath_features}")
+

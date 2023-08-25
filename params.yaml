@@ -20,5 +20,14 @@ features:
   input_video_dir: data/interim/reduced/
   output_video_dir: data/processed/videos/
   interim_features_directory: data/interim/features
+  labeled_dir: data/interim/labeled
   write_video: False
   final_features_directory: data/processed/features
+
+model:
+  model_type: rf
+  final_features_filepath: data/processed/features/final_features.csv
+  test_size: 0.3
+  target_column: label
+  predictions_dir: data/results/
+

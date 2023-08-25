@@ -99,7 +99,7 @@ def run_labeling(params: dict) -> None:
         video_path = os.path.join(input_video_dir, filename)
         video_name = os.path.splitext(filename)[0]
 
-        output_file = os.path.join(output_dir, video_name) + ".csv"
+        output_file = os.path.join(output_dir, video_name) + "_labeled.csv"
         
         # Check if this video has already been labeled
         if os.path.exists(output_file):
@@ -113,12 +113,12 @@ def run_labeling(params: dict) -> None:
 
         print(f"Saving temporary output to: {temp_file.name}")
         with temp_file as csvfile:
-            fieldnames = ['frame_number', 'filename', 'label']
+            fieldnames = ['video_frame', 'filename', 'label']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
 
-            for frame_number, label in labels:
-                writer.writerow({'frame_number': frame_number, 'filename': video_path, 'label': label})
+            for video_frame, label in labels:
+                writer.writerow({'video_frame': video_frame, 'filename': filename, 'label': label})
 
         # Move temporary file to final destination once the labeling is completed
         shutil.move(temp_file.name, output_file)
