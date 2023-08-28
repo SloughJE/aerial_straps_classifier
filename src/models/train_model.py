@@ -9,7 +9,7 @@ from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier
 
-
+# not implemented, need more data for this
 class FileNameBasedKFold:
     def __init__(self, n_splits=5):
         self.n_splits = n_splits
