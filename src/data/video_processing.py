@@ -26,11 +26,18 @@ def reduce_video_size(params: dict) -> None:
     
     # Filter out videos that have already been processed
     videos_to_process = [filename for filename in video_files if not os.path.exists(os.path.join(output_video_dir, filename))]
-    total_videos = len(videos_to_process)
-    already_processed = len(video_files) - total_videos
-    print(f"Total number of videos to process: {total_videos}.\nAlready processed {already_processed}.")
+    already_processed_videos = [filename for filename in video_files if os.path.exists(os.path.join(output_video_dir, filename))]
 
-    for idx, filename in enumerate(video_files):
+    total_videos = len(videos_to_process)
+    already_processed = len(already_processed_videos)
+    print(f"Total number of videos to process: {total_videos}")
+    print(f"Already processed {already_processed} videos:")
+
+    # Print filenames of already processed videos
+    for filename in already_processed_videos:
+        print(filename)
+
+    for idx, filename in enumerate(videos_to_process):
         input_video_path = os.path.join(input_video_dir, filename)
         output_video_path = os.path.join(output_video_dir, filename)
         

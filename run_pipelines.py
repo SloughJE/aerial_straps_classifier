@@ -4,6 +4,7 @@ import yaml
 from src.data.label import run_labeling
 from src.data.video_processing import reduce_video_size
 from src.features.make_features import extract_landmarks_and_features, combine_csv_files
+from src.models.train_model import train_model_pipeline
 
 if __name__ == "__main__":
 
@@ -33,6 +34,12 @@ if __name__ == "__main__":
         action="store_true"
     )
 
+    parser.add_argument(
+        "--train_model",
+        help="split train test, and train model",
+        action="store_true"
+    )
+
     args = parser.parse_args()
 
     if len(sys.argv) == 1:
@@ -59,4 +66,9 @@ if __name__ == "__main__":
         if args.combine_feature_csv:
             combine_csv_files(
                 params['features']
+            )
+
+        if args.train_model:
+            train_model_pipeline(
+                params['model']
             )
