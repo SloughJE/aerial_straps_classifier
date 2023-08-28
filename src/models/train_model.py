@@ -1,26 +1,86 @@
 import os
+import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+import optuna
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
 from sklearn.linear_model import LinearRegression
-from xgboost import XGBClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder
+from xgboost import XGBClassifier
 
 
+class FileNameBasedKFold:
+    def __init__(self, n_splits=5):
+        self.n_splits = n_splits
+    
+    def split(self, X, y, groups):
+        unique_files = groups.unique()
+        kf = KFold(n_splits=self.n_splits)
+        for train_files_idx, test_files_idx in kf.split(unique_files):
+            train_files = unique_files[train_files_idx]
+            test_files = unique_files[test_files_idx]
+            train_idx = X.index[groups.isin(train_files)]
+            test_idx = X.index[groups.isin(test_files)]
+            yield train_idx, test_idx
+    
+    def get_n_splits(self, X, y=None, groups=None):
+        return self.n_splits
+    
 
-def train_rf(X_train, y_train, params):
+def custom_cross_val_score(model, X, y, groups, cv, scoring_func):
+    scores = []
+    for train_idx, test_idx in cv.split(X, y, groups):
+        X_train_fold = X.iloc[train_idx]
+        y_train_fold = y.iloc[train_idx]
+        X_test_fold = X.iloc[test_idx]
+        y_test_fold = y.iloc[test_idx]
+        
+        model.fit(X_train_fold, y_train_fold)
+        y_pred = model.predict(X_test_fold)
+        score = scoring_func(y_test_fold, y_pred)
+        scores.append(score)
+    return np.array(scores)
+
+
+def train_rf(X_train, y_train, groups, params):
     model = RandomForestClassifier(**params)
     model.fit(X_train, y_train)
     return model
 
-def train_xgb(X_train, y_train, params):
-    model = XGBClassifier(**params)
+
+def train_xgb(X_train, y_train, groups, params):
+
+    optimize_hyperparams = params.pop('optimize_hyperparams', False)
+
+    def objective(trial):
+        params = {
+            'max_depth': trial.suggest_int('max_depth', 1, 20),
+            'n_estimators': trial.suggest_int('n_estimators', 1, 100),
+            'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3),
+            'subsample': trial.suggest_float('subsample', 0.1, 1),
+            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.1, 1),
+            'gamma': trial.suggest_float('gamma', 0, 1),
+            # ... other hyperparameters ...
+        }
+        clf = XGBClassifier(**params)
+        return -cross_val_score(clf, X_train, y_train, cv=5).mean()
+        
+    if optimize_hyperparams:
+        print("optimizing hyperparameters")
+        study = optuna.create_study(direction='maximize')
+        study.optimize(objective, n_trials=5)
+        best_params = study.best_params
+        print(f"best hyperparameters found: {best_params}")
+        model = XGBClassifier(**best_params)
+    else:
+        model = XGBClassifier(**params)
+    
     model.fit(X_train, y_train)
     return model
 
-def train_linear_regression(X_train, y_train, params):
+
+def train_linear_regression(X_train, y_train, groups, params):
     model = LinearRegression(**params)
     model.fit(X_train, y_train)
     return model
@@ -35,7 +95,7 @@ MODEL_MAPPER = {
     #... add other model functions here ...
 }
 
-def split_train_test(params: dict):
+def split_train_test(df,params: dict):
     """
     Splits the data into train/test sets based on the filename.
 
@@ -50,11 +110,7 @@ def split_train_test(params: dict):
     - test_df (DataFrame): Test data.
     """
 
-
-    final_features_filepath = params['final_features_filepath']
     test_size = params['test_size']
-    
-    df = pd.read_csv(final_features_filepath)
 
     # Get unique filenames
     unique_files = df['filename'].unique()
@@ -66,6 +122,9 @@ def split_train_test(params: dict):
     train_df = df[df['filename'].isin(train_files)]
     test_df = df[df['filename'].isin(test_files)]
     
+    # ensure the index is from 0 to len(df), will need for CV splitting based on filename
+    train_df = train_df.reset_index(drop=True)
+    test_df = test_df.reset_index(drop=True)
     # Print out the number of files and frames for both sets
     print(f"Training set: {len(train_files)} files with {len(train_df)} frames.")
     print(f"Test set: {len(test_files)} files with {len(test_df)} frames.")
@@ -89,18 +148,25 @@ def train_and_evaluate_model(train_df: pd.DataFrame, test_df: pd.DataFrame, para
     model_type = params['model_type']
     model_params = params.get('model_params', {})
     predictions_dir = params['predictions_dir']
-
-    # Separate features and target
-    X_train = train_df.drop(columns=[target_column, 'video_frame', 'filename'])
+    
+    # drop only video frame from train_df, also add filename to y_train
+    # when implementing CV split based on filename, don't drop filename here
+    X_train = train_df.drop(columns=[target_column, 'video_frame','filename'])
     y_train = train_df[target_column]
+  
+  
+    # drop video_frame and filename from test
     X_test = test_df.drop(columns=[target_column, 'video_frame', 'filename'])
     y_test = test_df[target_column]
 
     # Initialize and train the classifier
-    model = MODEL_MAPPER[model_type](X_train, y_train, model_params)
+    groups = train_df['filename']
+    model = MODEL_MAPPER[model_type](X_train, y_train, groups, params)
     
     # Helper function to predict, evaluate, and save predictions
-    def predict_and_save(model, X, y, data_type):
+    def predict_and_save(model, X, y, params, data_type):
+        label_encoder = params['label_encoder']
+
         save_path = os.path.join(predictions_dir, model_type, f"{data_type}_predictions.csv")
         # Ensure directory exists
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -112,18 +178,20 @@ def train_and_evaluate_model(train_df: pd.DataFrame, test_df: pd.DataFrame, para
         df = X.copy()
         df[target_column] = y
         df['predicted_label'] = y_pred
-        for i, class_name in enumerate(model.classes_):
+        df['predicted_label'] = label_encoder.inverse_transform(y_pred)
+
+        for i, class_name in enumerate(label_encoder.classes_):
             df[f'probability_{class_name}'] = y_prob[:, i]
         
         df.to_csv(save_path, index=False)
         return accuracy
 
     # Predict on training data for evaluation
-    train_accuracy = predict_and_save(model, X_train, y_train, "train")
+    train_accuracy = predict_and_save(model, X_train, y_train, params, "train")
     print(f"Train accuracy: {train_accuracy:.2f}")
 
     # Predict and evaluate on test data
-    test_accuracy = predict_and_save(model, X_test, y_test, "test")
+    test_accuracy = predict_and_save(model, X_test, y_test, params, "test")
     print(f"Test accuracy: {test_accuracy:.2f}")
 
     return model
@@ -166,8 +234,13 @@ def train_model_pipeline(params: dict):
     Returns:
     - model (Classifier): The trained classifier model.
     """
+
+    # load data
+    final_features_filepath = params['final_features_filepath']
+    df = pd.read_csv(final_features_filepath)
+
     # Split data into training and testing sets
-    train_df, test_df = split_train_test(params)
+    train_df, test_df = split_train_test(df, params)
 
     # Encode the target labels
     target_column = params['target_column']
@@ -175,7 +248,6 @@ def train_model_pipeline(params: dict):
 
     # Add the label encoder to the parameters to be accessible within train_and_evaluate_model
     params['label_encoder'] = label_encoder
-
     # Train the specified classifier and return the model
     print(f"training {params['model_type']} model")
     model = train_and_evaluate_model(train_df, test_df, params)
