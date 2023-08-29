@@ -30,5 +30,5 @@ model:
   test_size: 0.3
   target_column: label
   predictions_dir: data/results/
-  optimize_hyperparams: True
+  optimize_hyperparams: False
 

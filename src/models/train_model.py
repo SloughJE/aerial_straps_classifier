@@ -52,32 +52,36 @@ def train_rf(X_train, y_train, groups, params):
 def train_xgb(X_train, y_train, groups, params):
 
     optimize_hyperparams = params.pop('optimize_hyperparams', False)
-
+    
     def objective(trial):
-        params = {
+        param = {
+            'n_estimators': trial.suggest_int('n_estimators', 100, 1000),
             'max_depth': trial.suggest_int('max_depth', 1, 20),
-            'n_estimators': trial.suggest_int('n_estimators', 1, 100),
             'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3),
-            'subsample': trial.suggest_float('subsample', 0.1, 1),
-            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.1, 1),
-            'gamma': trial.suggest_float('gamma', 0, 1),
-            # ... other hyperparameters ...
+            'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
+            'subsample': trial.suggest_float('subsample', 0.5, 1),
+            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
         }
-        clf = XGBClassifier(**params)
-        return -cross_val_score(clf, X_train, y_train, cv=5).mean()
+        model = XGBClassifier(**param)
         
+        custom_cv = FileNameBasedKFold(n_splits=2)
+        scores = custom_cross_val_score(model, X_train, y_train, groups, cv=custom_cv, scoring_func=accuracy_score)
+        return 1 - np.mean(scores)
+    
     if optimize_hyperparams:
         print("optimizing hyperparameters")
         study = optuna.create_study(direction='maximize')
-        study.optimize(objective, n_trials=5)
+        study.optimize(objective, n_trials=3)
         best_params = study.best_params
         print(f"best hyperparameters found: {best_params}")
         model = XGBClassifier(**best_params)
     else:
-        model = XGBClassifier(**params)
+        model = XGBClassifier(**params) # later can: XGBClassifier(**params)
     
-    model.fit(X_train, y_train)
+    if not optimize_hyperparams:
+        model.fit(X_train, y_train)
     return model
+
 
 
 def train_linear_regression(X_train, y_train, groups, params):

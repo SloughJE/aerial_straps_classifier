@@ -70,14 +70,16 @@ def train_xgb(X_train, y_train, groups, params):
     
     if optimize_hyperparams:
         print("optimizing hyperparameters")
-        study = optuna.create_study(direction='maximize')
+        study = optuna.create_study(direction='minimize')
         study.optimize(objective, n_trials=3)
         best_params = study.best_params
         print(f"best hyperparameters found: {best_params}")
         model = XGBClassifier(**best_params)
+        model.fit(X_train, y_train)
+
     else:
         model = XGBClassifier(**params)
     
-    model.fit(X_train, y_train)
+    if not optimize_hyperparams:
+        model.fit(X_train, y_train)
     return model
-
