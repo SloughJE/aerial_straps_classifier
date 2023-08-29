@@ -53,7 +53,7 @@ def custom_cross_val_score(model, X, y, groups, cv, scoring_func):
 
 
 def train_rf(X_train, y_train, groups, params):
-    model = RandomForestClassifier(**params)
+    model = RandomForestClassifier()
     model.fit(X_train, y_train)
     return model
 

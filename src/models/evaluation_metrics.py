@@ -117,11 +117,16 @@ def generate_feature_importance_visualization(model, feature_names, save_path):
     """
     if hasattr(model, "feature_importances_"):
         feature_importances = model.feature_importances_
+        
+        # Sort feature importances and feature names in descending order of importance
+        sorted_indices = np.argsort(feature_importances)
+        sorted_feature_importances = feature_importances[sorted_indices]
+        sorted_feature_names = [feature_names[i] for i in sorted_indices]
 
         # Create a bar chart to visualize feature importance
         plt.figure(figsize=(10, 6))
-        plt.barh(range(len(feature_importances)), feature_importances, align="center")
-        plt.yticks(range(len(feature_importances)), feature_names)
+        plt.barh(range(len(sorted_feature_importances)), sorted_feature_importances, align="center")
+        plt.yticks(range(len(sorted_feature_importances)), sorted_feature_names)
         plt.xlabel("Feature Importance")
         plt.ylabel("Feature")
         plt.title("Feature Importance")
