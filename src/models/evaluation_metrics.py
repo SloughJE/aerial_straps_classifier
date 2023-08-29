@@ -1,0 +1,136 @@
+
+from sklearn.metrics import confusion_matrix, classification_report
+import matplotlib.pyplot as plt
+from pandas import DataFrame, Series
+import numpy as np
+import os
+import json
+from sklearn.metrics import roc_curve, auc, precision_recall_curve, roc_auc_score, average_precision_score
+
+def generate_roc_curves_and_save(predictions_dir: str, model_type: str, label_encoder, y_test: Series, y_prob: np.ndarray):
+    n_classes = len(label_encoder.classes_)
+    plt.figure(figsize=(8, 6))
+    
+    fpr = {}
+    tpr = {}
+    roc_auc = {}
+    
+    for i in range(n_classes):
+        try:
+            # Convert y_test to binary format for ROC curve calculation
+            y_binary = (y_test == i).astype(int)
+            fpr[i], tpr[i], _ = roc_curve(y_binary, y_prob[:, i])
+            roc_auc[i] = auc(fpr[i], tpr[i])
+        except ValueError:
+            # Skip this class if it's not present in either predictions or test data
+            print(f"Skipping class {label_encoder.inverse_transform([i])[0]} for ROC curve calculation.")
+    
+    for i in range(n_classes):
+        if i in fpr:
+            plt.plot(fpr[i], tpr[i], lw=2, label=f'ROC curve (AUC = {roc_auc[i]:.2f}) for class {label_encoder.inverse_transform([i])[0]}')
+    
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title(f'ROC Curves for {model_type} Model (Multiclass)')
+    plt.legend(loc='lower right')
+    plt.savefig(os.path.join(predictions_dir, model_type, "roc_curves.png"))
+    plt.close()
+
+
+
+def generate_pr_curves_and_save(predictions_dir: str, model_type: str, label_encoder, y_test: DataFrame, y_prob: np.ndarray):
+    n_classes = len(label_encoder.classes_)
+    plt.figure(figsize=(8, 6))
+    
+    precision = {}
+    recall = {}
+    pr_auc = {}
+    
+    for i in range(n_classes):
+        try:
+            precision[i], recall[i], _ = precision_recall_curve(y_test == i, y_prob[:, i])
+            pr_auc[i] = auc(recall[i], precision[i])
+        except ValueError:
+            # Skip this class if it's not present in either predictions or test data
+            print(f"Skipping class {label_encoder.inverse_transform([i])[0]} for PR curve calculation.")
+    
+    for i in range(n_classes):
+        if i in precision:
+            plt.plot(recall[i], precision[i], lw=2, label=f'PR curve (AUC = {pr_auc[i]:.2f}) for class {label_encoder.inverse_transform([i])[0]}')
+    
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title(f'Precision-Recall Curves for {model_type} Model (Multiclass)')
+    plt.legend(loc='lower left')
+    plt.savefig(os.path.join(predictions_dir, model_type, "precision_recall_curves.png"))
+    plt.close()
+
+
+
+def generate_visualizations_and_save_metrics(predictions_dir: str, model_type: str, label_encoder, y_test: DataFrame, y_pred: np.ndarray):
+    # Generate confusion matrix
+    cm = confusion_matrix(y_test, y_pred)
+    plt.figure(figsize=(8, 6))
+    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    plt.title(f"Confusion Matrix for {model_type} Model")
+    plt.colorbar()
+    plt.xlabel("Predicted Labels")
+    plt.ylabel("True Labels")
+    plt.xticks(range(len(label_encoder.classes_)), label_encoder.classes_, rotation=45)
+    plt.yticks(range(len(label_encoder.classes_)), label_encoder.classes_)
+
+    # Annotate cells with counts and adjust text color based on background
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            cell_value = cm[i, j]
+            text_color = "white" if cell_value > cm.max() / 2 else "black"
+            plt.text(j, i, str(cell_value), ha="center", va="center", color=text_color)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(predictions_dir, model_type, "confusion_matrix.png"))
+    plt.close()
+
+    # Save classification report
+    report = classification_report(y_test, y_pred, target_names=label_encoder.classes_)
+    # Create a dictionary to store metrics
+    metrics_dict = {
+        "confusion_matrix": cm.tolist(),
+        "classification_report": report,
+    }
+
+    # Save metrics as JSON
+    metrics_json_path = os.path.join(predictions_dir, model_type, "metrics.json")
+    with open(metrics_json_path, "w") as json_file:
+        json.dump(metrics_dict, json_file, indent=4)
+
+    print("Metrics saved as JSON.")
+
+def generate_feature_importance_visualization(model, feature_names, save_path):
+    """
+    Generates and saves a feature importance visualization for the model.
+
+    Args:
+    - model: The trained model that supports feature importance.
+    - feature_names: List of feature names used in the model.
+    - save_path: Path to save the feature importance visualization.
+    """
+    if hasattr(model, "feature_importances_"):
+        feature_importances = model.feature_importances_
+
+        # Create a bar chart to visualize feature importance
+        plt.figure(figsize=(10, 6))
+        plt.barh(range(len(feature_importances)), feature_importances, align="center")
+        plt.yticks(range(len(feature_importances)), feature_names)
+        plt.xlabel("Feature Importance")
+        plt.ylabel("Feature")
+        plt.title("Feature Importance")
+        plt.tight_layout()
+
+        # Save the visualization
+        plt.savefig(save_path)
+        plt.close()
+        print("Feature importance visualization saved.")
+
+    else:
+        print("Feature importance visualization is not supported for this model.")

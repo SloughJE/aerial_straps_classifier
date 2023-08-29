@@ -13,8 +13,10 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.base import BaseEstimator
-
 from xgboost import XGBClassifier
+
+from .evaluation_metrics import generate_visualizations_and_save_metrics, generate_roc_curves_and_save, \
+    generate_pr_curves_and_save, generate_feature_importance_visualization
 
 # not implemented, need more data for this
 class FileNameBasedKFold:
@@ -289,10 +291,19 @@ def predict_and_evaluate(model: BaseEstimator, X_train: DataFrame, y_train: Data
             df[f'probability_{class_name}'] = y_prob[:, i]
         
         df.to_csv(save_path, index=False)
+        #print(y_prob)
+        #print(y)
+        # Generate and save visualizations and metrics
+        generate_visualizations_and_save_metrics(predictions_dir, model_type, label_encoder, y, y_pred)
+        generate_roc_curves_and_save(predictions_dir, model_type, label_encoder, y, y_prob)
+        generate_pr_curves_and_save(predictions_dir, model_type, label_encoder, y, y_prob)
+
         return accuracy
 
     train_accuracy = predict_and_save(model, X_train, y_train, params, "train")
     test_accuracy = predict_and_save(model, X_test, y_test, params, "test")
+
+
     return train_accuracy, test_accuracy
 
 
@@ -315,6 +326,10 @@ def train_and_evaluate_model(train_df: DataFrame, test_df: DataFrame, params: Di
     model = train_model(X_train, y_train, groups, params)
     train_accuracy, test_accuracy = predict_and_evaluate(model, X_train, y_train, X_test, y_test, params)
     save_model(model, params, label_encoder)
+
+    feature_names = list(X_train.columns)  
+    save_path = os.path.join(params['predictions_dir'], params['model_type'], "feature_importance.png")
+    generate_feature_importance_visualization(model, feature_names, save_path)
 
     print(f"Train accuracy: {train_accuracy:.2f}")
     print(f"Test accuracy: {test_accuracy:.2f}")
