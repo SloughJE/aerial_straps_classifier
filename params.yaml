@@ -12,7 +12,7 @@ labeling:
     r: reverse meathook
     b: back lever
     f: front lever
-  skip_frames: 60
+  skip_seconds: 1
   input_video_dir: data/interim/reduced/
   output_dir: data/interim/labeled/
 

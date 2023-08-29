@@ -5,17 +5,17 @@ import tempfile
 import cv2
 
 
-def label_frames(params: dict, video_path: str, skip_frames: int) -> list:
+def label_frames(params: dict, video_path: str, skip_seconds: float) -> list:
     """
     Allows the user to label frames from the specified video file. 
     The user can label a frame, and the same label will be applied to 
-    the specified number of subsequent frames (skip_frames).
+    the subsequent frames with a time interval specified in seconds (skip_seconds).
 
     Parameters:
     params (dict): Dictionary containing the following key-value pairs:
         - 'labels': Dictionary mapping keypresses to corresponding labels.
     video_path (str): Path to the video file to be labeled.
-    skip_frames (int): Number of frames to skip between labeled frames. 
+    skip_seconds (float): Time interval in seconds to skip between labeled frames. 
     Same label is applied to skipped frames.
 
     Returns:
@@ -29,6 +29,7 @@ def label_frames(params: dict, video_path: str, skip_frames: int) -> list:
     labels = []
     last_label = 'unknown'  # Keep track of the last label
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
 
     while frame_number < total_frames:
         # Seek to the desired frame
@@ -59,6 +60,9 @@ def label_frames(params: dict, video_path: str, skip_frames: int) -> list:
                 if char_key == 'q':  # Break outer loop if 'q' was pressed
                     break
 
+        # Calculate the number of frames to skip based on the desired skip_seconds
+        fps_rounded = round(fps)  # Round the fps to the nearest whole number
+        skip_frames = int(fps_rounded * skip_seconds)
 
         # Store the label for this frame and all skipped frames
         for i in range(frame_number, min(frame_number + skip_frames + 1, total_frames)):  # +1 to include the current frame
@@ -72,6 +76,7 @@ def label_frames(params: dict, video_path: str, skip_frames: int) -> list:
     return labels
 
 
+
 def run_labeling(params: dict) -> None:
     """
     Executes the labeling process for all video files in the specified input directory.
@@ -82,13 +87,13 @@ def run_labeling(params: dict) -> None:
     params (dict): Dictionary containing the following key-value pairs:
         - 'input_video_dir': Directory containing video files to be labeled.
         - 'output_dir': Directory where labeled CSV files will be saved.
-        - 'skip_frames': Number of frames to skip between labeled frames. 
+        - 'skip_seconds': Number of frames to skip between labeled frames. 
         Same label is applied to skipped frames.
     """
 
     input_video_dir = params['input_video_dir']
     output_dir = params['output_dir']
-    skip_frames = params['skip_frames']
+    skip_seconds = params['skip_seconds']
 
     video_files = [f for f in os.listdir(input_video_dir) if f.endswith(".mov") or f.endswith(".mp4")]
     total_videos = len(video_files)
@@ -108,7 +113,7 @@ def run_labeling(params: dict) -> None:
 
         print(f"Labeling {filename} ({idx + 1} of {total_videos})")
 
-        labels = label_frames(params, video_path, skip_frames)
+        labels = label_frames(params, video_path, skip_seconds)
         temp_file = tempfile.NamedTemporaryFile(mode='w+', newline='', delete=False)
 
         print(f"Saving temporary output to: {temp_file.name}")
