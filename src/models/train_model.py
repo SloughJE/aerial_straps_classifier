@@ -233,7 +233,8 @@ def save_model(model: BaseEstimator, params: Dict[str, Any], label_encoder: Labe
     joblib.dump(model, os.path.join(model_dir, f'{model_type}_model.pkl'))
     joblib.dump(label_encoder, os.path.join(model_dir, 'label_encoder.pkl'))
 
-def predict_and_evaluate(model: BaseEstimator, X_train: DataFrame, y_train: DataFrame, X_test: DataFrame, y_test: DataFrame, params: Dict[str, Any]) -> Tuple[float, float]:
+def predict_and_evaluate(model: BaseEstimator, X_train: DataFrame, y_train: DataFrame, X_test: DataFrame, 
+                         y_test: DataFrame, params: Dict[str, Any]) -> Tuple[float, float]:
     """
     Predicts and evaluates the model on the training and testing data.
 
