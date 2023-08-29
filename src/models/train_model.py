@@ -3,12 +3,17 @@ import joblib
 import json
 import numpy as np
 import pandas as pd
+from pandas import DataFrame
+
 import optuna
+from typing import Tuple, Dict, Any
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder
+from sklearn.base import BaseEstimator
+
 from xgboost import XGBClassifier
 
 # not implemented, need more data for this
@@ -66,12 +71,12 @@ def train_xgb(X_train, y_train, groups, params):
         }
         model = XGBClassifier(**param)
         
-        return -cross_val_score(model, X_train, y_train, cv=5).mean()
+        return -cross_val_score(model, X_train, y_train, cv=3).mean()
 
     if optimize_hyperparams:
         print("optimizing hyperparameters")
         study = optuna.create_study(direction='minimize')
-        study.optimize(objective, n_trials=3)
+        study.optimize(objective, n_trials=2)
         best_params = study.best_params
         print(f"best hyperparameters found: {best_params}")
         model = XGBClassifier(**best_params)
@@ -165,39 +170,105 @@ def encode_labels(train_df, test_df, target_column):
     return train_df, test_df, le
 
 
-def train_and_evaluate_model(train_df: pd.DataFrame, test_df: pd.DataFrame, params: dict):
+def preprocess_data(train_df: DataFrame, test_df: DataFrame, 
+                    target_column: str) -> Tuple[DataFrame, DataFrame, DataFrame, DataFrame, DataFrame]:
     """
-    Train a classifier using the provided training data and evaluate it on the test data.
-    
+    Preprocesses the training and testing data by separating the features and target variable and extracting the groups.
+
     Args:
-    - train_df (DataFrame): Training data.
-    - test_df (DataFrame): Test data.
-    - params (dict): Dictionary containing model parameters and other configs.
-    
+    - train_df (DataFrame): The training data.
+    - test_df (DataFrame): The testing data.
+    - target_column (str): The name of the target column.
+
     Returns:
-    - model (Classifier): The trained classifier model.
+    - X_train (DataFrame): The training features.
+    - y_train (DataFrame): The training target.
+    - X_test (DataFrame): The testing features.
+    - y_test (DataFrame): The testing target.
+    - groups (DataFrame): The groups for the training data.
     """
-    target_column = params['target_column']
-    model_type = params['model_type']
-    model_params = params.get('model_params', {})
-    predictions_dir = params['predictions_dir']
-    
-    # drop only video frame from train_df, also add filename to y_train
-    # when implementing CV split based on filename, don't drop filename here
-    X_train = train_df.drop(columns=[target_column, 'video_frame','filename'])
+    X_train = train_df.drop(columns=[target_column, 'video_frame', 'filename'])
     y_train = train_df[target_column]
-  
-  
-    # drop video_frame and filename from test
     X_test = test_df.drop(columns=[target_column, 'video_frame', 'filename'])
     y_test = test_df[target_column]
-
-    # Initialize and train the classifier
     groups = train_df['filename']
+    return X_train, y_train, X_test, y_test, groups
+
+
+def train_model(X_train: DataFrame, y_train: DataFrame, groups: DataFrame, 
+                params: Dict[str, Any]) -> BaseEstimator:
+    """
+    Trains a model using the provided training data and parameters.
+
+    Args:
+    - X_train (DataFrame): The training features.
+    - y_train (DataFrame): The training target.
+    - groups (DataFrame): The groups for the training data.
+    - params (dict): The parameters for the model.
+
+    Returns:
+    - model (BaseEstimator): The trained model.
+    """
+    model_type = params['model_type']
     model = MODEL_MAPPER[model_type](X_train, y_train, groups, params)
-    
+    return model
+
+
+def save_model(model: BaseEstimator, params: Dict[str, Any], label_encoder: LabelEncoder) -> None:
+    """
+    Saves the trained model and label encoder to disk.
+
+    Args:
+    - model (BaseEstimator): The trained model.
+    - params (dict): The parameters for the model.
+    - label_encoder (LabelEncoder): The label encoder.
+
+    Returns:
+    - None
+    """
+    model_type = params['model_type']
+    models_dir = 'models'
+    model_dir = os.path.join(models_dir, model_type)
+    os.makedirs(model_dir, exist_ok=True)
+    joblib.dump(model, os.path.join(model_dir, f'{model_type}_model.pkl'))
+    joblib.dump(label_encoder, os.path.join(model_dir, 'label_encoder.pkl'))
+
+def predict_and_evaluate(model: BaseEstimator, X_train: DataFrame, y_train: DataFrame, X_test: DataFrame, y_test: DataFrame, params: Dict[str, Any]) -> Tuple[float, float]:
+    """
+    Predicts and evaluates the model on the training and testing data.
+
+    Args:
+    - model (BaseEstimator): The trained model.
+    - X_train (DataFrame): The training features.
+    - y_train (DataFrame): The training target.
+    - X_test (DataFrame): The testing features.
+    - y_test (DataFrame): The testing target.
+    - params (dict): The parameters for the model.
+
+    Returns:
+    - train_accuracy (float): The accuracy of the model on the training data.
+    - test_accuracy (float): The accuracy of the model on the testing data.
+    """
+    predictions_dir = params['predictions_dir']
+    model_type = params['model_type']
+    target_column = params['target_column']
+
     # Helper function to predict, evaluate, and save predictions
-    def predict_and_save(model, X, y, params, data_type):
+    def predict_and_save(model: BaseEstimator, X: DataFrame, y: DataFrame, 
+                         params: Dict[str, Any], data_type: str) -> float:
+        """
+        Predicts, evaluates, and saves the predictions of the model on the provided data.
+
+        Args:
+        - model (BaseEstimator): The trained model.
+        - X (DataFrame): The features.
+        - y (DataFrame): The target.
+        - params (dict): The parameters for the model.
+        - data_type (str): The type of the data ('train' or 'test').
+
+        Returns:
+        - accuracy (float): The accuracy of the model on the provided data.
+        """
         label_encoder = params['label_encoder']
 
         save_path = os.path.join(predictions_dir, model_type, f"{data_type}_predictions.csv")
@@ -219,28 +290,39 @@ def train_and_evaluate_model(train_df: pd.DataFrame, test_df: pd.DataFrame, para
         df.to_csv(save_path, index=False)
         return accuracy
 
-    # Predict on training data for evaluation
     train_accuracy = predict_and_save(model, X_train, y_train, params, "train")
-    print(f"Train accuracy: {train_accuracy:.2f}")
-
-    # Predict and evaluate on test data
     test_accuracy = predict_and_save(model, X_test, y_test, params, "test")
+    return train_accuracy, test_accuracy
+
+
+def train_and_evaluate_model(train_df: DataFrame, test_df: DataFrame, params: Dict[str, Any]) -> BaseEstimator:
+    """
+    Trains and evaluates a model using the provided training and testing data.
+
+    Args:
+    - train_df (DataFrame): The training data.
+    - test_df (DataFrame): The testing data.
+    - params (dict): The parameters for the model.
+
+    Returns:
+    - model (BaseEstimator): The trained model.
+    """
+    target_column = params['target_column']
+    label_encoder = params['label_encoder']
+
+    X_train, y_train, X_test, y_test, groups = preprocess_data(train_df, test_df, target_column)
+    model = train_model(X_train, y_train, groups, params)
+    train_accuracy, test_accuracy = predict_and_evaluate(model, X_train, y_train, X_test, y_test, params)
+    save_model(model, params, label_encoder)
+
+    print(f"Train accuracy: {train_accuracy:.2f}")
     print(f"Test accuracy: {test_accuracy:.2f}")
-
-    # Save the model and label encoder
-    models_dir = 'models'
-    model_dir = os.path.join(models_dir, model_type)
-    os.makedirs(model_dir, exist_ok=True)
-    joblib.dump(model, os.path.join(model_dir, f'{model_type}_model.pkl'))
-    joblib.dump(params['label_encoder'], os.path.join(model_dir, 'label_encoder.pkl'))
-
     return model
 
 
-
-def train_model_pipeline(params: dict):
+def train_model_pipeline(params: Dict[str, Any]) -> BaseEstimator:
     """
-    Manages the process of splitting the data into train/test sets and training a specified classifier.
+    Manages the process of splitting the data into train/test sets, encoding the target labels, and training a specified classifier.
 
     Args:
     - params (dict): Dictionary containing the following key-value pairs:
@@ -252,7 +334,7 @@ def train_model_pipeline(params: dict):
         - target_column (str): The name of the target column in the dataframe.
 
     Returns:
-    - model (Classifier): The trained classifier model.
+    - model (BaseEstimator): The trained classifier model.
     """
 
     # load data
