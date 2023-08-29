@@ -1,4 +1,6 @@
 import os
+import joblib
+import json
 import numpy as np
 import pandas as pd
 import optuna
@@ -64,22 +66,29 @@ def train_xgb(X_train, y_train, groups, params):
         }
         model = XGBClassifier(**param)
         
-        custom_cv = FileNameBasedKFold(n_splits=2)
-        scores = custom_cross_val_score(model, X_train, y_train, groups, cv=custom_cv, scoring_func=accuracy_score)
-        return 1 - np.mean(scores)
-    
+        return -cross_val_score(model, X_train, y_train, cv=5).mean()
+
     if optimize_hyperparams:
         print("optimizing hyperparameters")
-        study = optuna.create_study(direction='maximize')
+        study = optuna.create_study(direction='minimize')
         study.optimize(objective, n_trials=3)
         best_params = study.best_params
         print(f"best hyperparameters found: {best_params}")
         model = XGBClassifier(**best_params)
+
+        # Save the best hyperparameters
+        models_dir = 'models'
+        model_dir = os.path.join(models_dir, 'xgb')
+        os.makedirs(model_dir, exist_ok=True)
+        with open(os.path.join(model_dir, 'best_hyperparameters.json'), 'w') as f:
+            json.dump(best_params, f)
+
     else:
-        model = XGBClassifier(**params) # later can: XGBClassifier(**params)
+        model = XGBClassifier() # later can: XGBClassifier(**params)
     
-    if not optimize_hyperparams:
-        model.fit(X_train, y_train)
+    # fit model on entire dataset
+    model.fit(X_train, y_train)
+
     return model
 
 
@@ -134,6 +143,26 @@ def split_train_test(df,params: dict):
     print(f"Test set: {len(test_files)} files with {len(test_df)} frames.")
 
     return train_df, test_df
+
+
+def encode_labels(train_df, test_df, target_column):
+    """
+    Encodes the target labels to numerical values.
+    
+    Args:
+    - train_df (DataFrame): Training data.
+    - test_df (DataFrame): Test data.
+    - target_column (str): The name of the target column in the dataframe.
+    
+    Returns:
+    - train_df (DataFrame): Training data with encoded target.
+    - test_df (DataFrame): Test data with encoded target.
+    - le (LabelEncoder): Fitted label encoder.
+    """
+    le = LabelEncoder()
+    train_df[target_column] = le.fit_transform(train_df[target_column])
+    test_df[target_column] = le.transform(test_df[target_column])  # Use transform, not fit_transform for test set
+    return train_df, test_df, le
 
 
 def train_and_evaluate_model(train_df: pd.DataFrame, test_df: pd.DataFrame, params: dict):
@@ -198,28 +227,15 @@ def train_and_evaluate_model(train_df: pd.DataFrame, test_df: pd.DataFrame, para
     test_accuracy = predict_and_save(model, X_test, y_test, params, "test")
     print(f"Test accuracy: {test_accuracy:.2f}")
 
+    # Save the model and label encoder
+    models_dir = 'models'
+    model_dir = os.path.join(models_dir, model_type)
+    os.makedirs(model_dir, exist_ok=True)
+    joblib.dump(model, os.path.join(model_dir, f'{model_type}_model.pkl'))
+    joblib.dump(params['label_encoder'], os.path.join(model_dir, 'label_encoder.pkl'))
+
     return model
 
-
-
-def encode_labels(train_df, test_df, target_column):
-    """
-    Encodes the target labels to numerical values.
-    
-    Args:
-    - train_df (DataFrame): Training data.
-    - test_df (DataFrame): Test data.
-    - target_column (str): The name of the target column in the dataframe.
-    
-    Returns:
-    - train_df (DataFrame): Training data with encoded target.
-    - test_df (DataFrame): Test data with encoded target.
-    - le (LabelEncoder): Fitted label encoder.
-    """
-    le = LabelEncoder()
-    train_df[target_column] = le.fit_transform(train_df[target_column])
-    test_df[target_column] = le.transform(test_df[target_column])  # Use transform, not fit_transform for test set
-    return train_df, test_df, le
 
 
 def train_model_pipeline(params: dict):
@@ -255,5 +271,6 @@ def train_model_pipeline(params: dict):
     # Train the specified classifier and return the model
     print(f"training {params['model_type']} model")
     model = train_and_evaluate_model(train_df, test_df, params)
-    print("Trained model successfully!")
+    print("Trained and saved model successfully!")
+
     return model
