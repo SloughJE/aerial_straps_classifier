@@ -128,7 +128,9 @@ def generate_visualizations_and_save_metrics(predictions_dir: str, model_type: s
     plt.close()
 
     # Save classification report
-    report = classification_report(y_test, y_pred, target_names=label_encoder.classes_, output_dict=True)
+    report = classification_report(y_test, y_pred, target_names=label_encoder.classes_, output_dict=True, 
+                                   labels=label_encoder.transform(label_encoder.classes_))
+
     report_path = os.path.join(predictions_dir, model_type, "classification_report.json")
     with open(report_path, "w") as f:
         json.dump(report, f)
