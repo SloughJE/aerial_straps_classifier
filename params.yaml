@@ -24,7 +24,7 @@ features:
   write_video: False
   final_features_directory: data/processed/features
 
-model:
+model_dev:
   model_type: xgb
   final_features_filepath: data/processed/features/final_features.csv
   test_size: 0.3
@@ -32,3 +32,9 @@ model:
   predictions_dir: data/results/
   optimize_hyperparams: True
 
+model_prod:
+  model_type: xgb
+  final_features_filepath: data/processed/features/final_features.csv
+  target_column: label
+  
+  
