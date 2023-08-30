@@ -1,15 +1,27 @@
-
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import confusion_matrix, classification_report, roc_curve, auc, precision_recall_curve
 import matplotlib.pyplot as plt
 from pandas import DataFrame, Series
 import numpy as np
 import os
 import json
-from sklearn.metrics import roc_curve, auc, precision_recall_curve, roc_auc_score, average_precision_score
+from typing import Tuple, Union, List, Any
 
-def generate_roc_curves_and_save(predictions_dir: str, model_type: str, label_encoder, y_test: Series, y_prob: np.ndarray):
+def generate_roc_curves_and_save(predictions_dir: str, model_type: str, label_encoder: Any, y_test: Series, y_prob: np.ndarray) -> None:
+    """
+    Generates ROC curves for each class and saves the visualization.
+
+    Args:
+    - predictions_dir (str): Directory to save the visualization.
+    - model_type (str): Type of the model.
+    - label_encoder (LabelEncoder): The label encoder.
+    - y_test (Series): True labels.
+    - y_prob (np.ndarray): Predicted probabilities.
+
+    Returns:
+    - None
+    """
     n_classes = len(label_encoder.classes_)
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(10, 8))
     
     fpr = {}
     tpr = {}
@@ -38,10 +50,22 @@ def generate_roc_curves_and_save(predictions_dir: str, model_type: str, label_en
     plt.close()
 
 
+def generate_pr_curves_and_save(predictions_dir: str, model_type: str, label_encoder: Any, y_test: DataFrame, y_prob: np.ndarray) -> None:
+    """
+    Generates precision-recall curves for each class and saves the visualization.
 
-def generate_pr_curves_and_save(predictions_dir: str, model_type: str, label_encoder, y_test: DataFrame, y_prob: np.ndarray):
+    Args:
+    - predictions_dir (str): Directory to save the visualization.
+    - model_type (str): Type of the model.
+    - label_encoder (LabelEncoder): The label encoder.
+    - y_test (DataFrame): True labels.
+    - y_prob (np.ndarray): Predicted probabilities.
+
+    Returns:
+    - None
+    """
     n_classes = len(label_encoder.classes_)
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(10, 8))
     
     precision = {}
     recall = {}
@@ -67,11 +91,23 @@ def generate_pr_curves_and_save(predictions_dir: str, model_type: str, label_enc
     plt.close()
 
 
+def generate_visualizations_and_save_metrics(predictions_dir: str, model_type: str, label_encoder: Any, y_test: DataFrame, y_pred: np.ndarray) -> None:
+    """
+    Generates confusion matrix, classification report, and saves visualizations and metrics.
 
-def generate_visualizations_and_save_metrics(predictions_dir: str, model_type: str, label_encoder, y_test: DataFrame, y_pred: np.ndarray):
+    Args:
+    - predictions_dir (str): Directory to save visualizations and metrics.
+    - model_type (str): Type of the model.
+    - label_encoder (LabelEncoder): The label encoder.
+    - y_test (DataFrame): True labels.
+    - y_pred (np.ndarray): Predicted labels.
+
+    Returns:
+    - None
+    """
     # Generate confusion matrix
     cm = confusion_matrix(y_test, y_pred)
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(10, 8))
     plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
     plt.title(f"Confusion Matrix for {model_type} Model")
     plt.colorbar()
@@ -99,14 +135,18 @@ def generate_visualizations_and_save_metrics(predictions_dir: str, model_type: s
 
     print("Metrics saved as JSON.")
 
-def generate_feature_importance_visualization(model, feature_names, save_path):
+
+def generate_feature_importance_visualization(model: Any, feature_names: List[str], save_path: str) -> None:
     """
     Generates and saves a feature importance visualization for the model.
 
     Args:
-    - model: The trained model that supports feature importance.
-    - feature_names: List of feature names used in the model.
-    - save_path: Path to save the feature importance visualization.
+    - model (Any): The trained model that supports feature importance.
+    - feature_names (List[str]): List of feature names used in the model.
+    - save_path (str): Path to save the feature importance visualization.
+
+    Returns:
+    - None
     """
     if hasattr(model, "feature_importances_"):
         feature_importances = model.feature_importances_
