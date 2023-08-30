@@ -4,13 +4,14 @@ import pandas as pd
 from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
+from typing import Dict
 
-def train_prod_model(params):
+def train_prod_model(params: Dict[str, str]) -> None:
     """
     Trains the production model on the entire dataset and saves it.
 
     Args:
-    - params: Dictionary containing parameters for training the production model.
+    - params (dict): Dictionary containing parameters for training the production model.
     """
     model_type = params['model_type']
     final_features_filepath = params['final_features_filepath']
