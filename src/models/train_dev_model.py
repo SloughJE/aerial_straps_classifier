@@ -15,8 +15,13 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.base import BaseEstimator
 from xgboost import XGBClassifier
 
-from .evaluation_metrics import generate_visualizations_and_save_metrics, generate_roc_curves_and_save, \
-    generate_pr_curves_and_save, generate_feature_importance_visualization
+from .evaluation_metrics import (
+    generate_visualizations_and_save_metrics,
+    generate_roc_curves_and_save,
+    generate_pr_curves_and_save,
+    generate_feature_importance_visualization
+)
+
 
 # not implemented, need more data for this
 class FileNameBasedKFold:
@@ -51,13 +56,26 @@ def custom_cross_val_score(model, X, y, groups, cv, scoring_func):
         scores.append(score)
     return np.array(scores)
 
-def train_rf(X_train, y_train, groups, params):
 
+def train_rf(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, params: Dict[str, Any]) -> RandomForestClassifier:
+    """
+    Trains a RandomForestClassifier with optional hyperparameter optimization.
+
+    Args:
+    - X_train (DataFrame): The training features.
+    - y_train (np.ndarray): The training target.
+    - groups (np.ndarray): The groups for the training data.
+    - params (dict): The parameters for the model.
+
+    Returns:
+    - model (RandomForestClassifier): The trained RandomForest model.
+    """
     optimize_hyperparams = params.pop('optimize_hyperparams', False)
     
     if optimize_hyperparams:
 
         def objective(trial):
+            # Hyperparameter search space
             n_estimators = trial.suggest_int('n_estimators', 100, 1000)
             max_depth = trial.suggest_int('max_depth', 1, 20)
             min_samples_split = trial.suggest_int('min_samples_split', 2, 10)
@@ -65,9 +83,9 @@ def train_rf(X_train, y_train, groups, params):
             max_features = trial.suggest_categorical('max_features', ['sqrt', 'log2'])
             
             model = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth,
-                                        min_samples_split=min_samples_split,
-                                        min_samples_leaf=min_samples_leaf,
-                                        max_features=max_features)
+                                           min_samples_split=min_samples_split,
+                                           min_samples_leaf=min_samples_leaf,
+                                           max_features=max_features)
             
             return -cross_val_score(model, X_train, y_train, cv=3, scoring='accuracy').mean()
 
@@ -78,7 +96,7 @@ def train_rf(X_train, y_train, groups, params):
         model = RandomForestClassifier(**best_params)
 
         # Save the best hyperparameters
-        models_dir = 'models'
+        models_dir = 'models/dev'
         model_dir = os.path.join(models_dir, 'rf')
         os.makedirs(model_dir, exist_ok=True)
         with open(os.path.join(model_dir, 'best_hyperparameters.json'), 'w') as f:
@@ -93,8 +111,19 @@ def train_rf(X_train, y_train, groups, params):
     return model
 
 
-def train_xgb(X_train, y_train, groups, params):
+def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, params: Dict[str, Any]) -> XGBClassifier:
+    """
+    Trains an XGBClassifier with optional hyperparameter optimization.
 
+    Args:
+    - X_train (DataFrame): The training features.
+    - y_train (np.ndarray): The training target.
+    - groups (np.ndarray): The groups for the training data.
+    - params (dict): The parameters for the model.
+
+    Returns:
+    - model (XGBClassifier): The trained XGB model.
+    """
     optimize_hyperparams = params.pop('optimize_hyperparams', False)
     
     def objective(trial):
@@ -111,15 +140,15 @@ def train_xgb(X_train, y_train, groups, params):
         return -cross_val_score(model, X_train, y_train, cv=3).mean()
 
     if optimize_hyperparams:
-        print("optimizing hyperparameters")
+        print("Optimizing hyperparameters")
         study = optuna.create_study(direction='minimize')
         study.optimize(objective, n_trials=2)
         best_params = study.best_params
-        print(f"best hyperparameters found: {best_params}")
+        print(f"Best hyperparameters found: {best_params}")
         model = XGBClassifier(**best_params)
 
         # Save the best hyperparameters
-        models_dir = 'models'
+        models_dir = 'models/dev'
         model_dir = os.path.join(models_dir, 'xgb')
         os.makedirs(model_dir, exist_ok=True)
         with open(os.path.join(model_dir, 'best_hyperparameters.json'), 'w') as f:
@@ -128,11 +157,10 @@ def train_xgb(X_train, y_train, groups, params):
     else:
         model = XGBClassifier() # later can: XGBClassifier(**params)
     
-    # fit model on entire dataset
+    # Fit model on the entire dataset
     model.fit(X_train, y_train)
 
     return model
-
 
 
 def train_linear_regression(X_train, y_train, groups, params):
@@ -141,30 +169,31 @@ def train_linear_regression(X_train, y_train, groups, params):
     return model
 
 
+# Define the model mapping
 MODEL_MAPPER = {
     'rf': train_rf,
     'xgb': train_xgb,
     'linear_regression': train_linear_regression,
     # 'svm': train_svm,
     # 'neural_net': train_neural_net,
-    #... add other model functions here ...
+    # ... add other model functions here ...
 }
 
-def split_train_test(df,params: dict):
+def split_train_test(df: DataFrame, params: Dict[str, Any]) -> Tuple[DataFrame, DataFrame]:
     """
     Splits the data into train/test sets based on the filename.
 
     Args:
+    - df (DataFrame): The main dataframe containing the data.
     - params (dict): Dictionary containing the following key-value pairs:
         - final_features_filepath (str): Path to the features CSV file.
-        - test_size (float): Fraction of data to be used as the test set. (Optional. Defaults to None)
+        - test_size (float): Fraction of data to be used as the test set.
         - random_state (int, optional): Random seed for reproducibility. Defaults to None if not provided.
 
     Returns:
     - train_df (DataFrame): Training data.
     - test_df (DataFrame): Test data.
     """
-
     test_size = params['test_size']
 
     # Get unique filenames
@@ -177,7 +206,7 @@ def split_train_test(df,params: dict):
     train_df = df[df['filename'].isin(train_files)]
     test_df = df[df['filename'].isin(test_files)]
     
-    # ensure the index is from 0 to len(df), will need for CV splitting based on filename
+    # Ensure the index is from 0 to len(df), will need for CV splitting based on filename
     train_df = train_df.reset_index(drop=True)
     test_df = test_df.reset_index(drop=True)
     # Print out the number of files and frames for both sets
@@ -187,7 +216,7 @@ def split_train_test(df,params: dict):
     return train_df, test_df
 
 
-def encode_labels(train_df, test_df, target_column):
+def encode_labels(train_df: DataFrame, test_df: DataFrame, target_column: str) -> Tuple[DataFrame, DataFrame, LabelEncoder]:
     """
     Encodes the target labels to numerical values.
     
@@ -203,7 +232,7 @@ def encode_labels(train_df, test_df, target_column):
     """
     le = LabelEncoder()
     train_df[target_column] = le.fit_transform(train_df[target_column])
-    test_df[target_column] = le.transform(test_df[target_column])  # Use transform, not fit_transform for test set
+    test_df[target_column] = le.transform(test_df[target_column])  # Use transform, not fit_transform for the test set
     return train_df, test_df, le
 
 
@@ -264,11 +293,12 @@ def save_model(model: BaseEstimator, params: Dict[str, Any], label_encoder: Labe
     - None
     """
     model_type = params['model_type']
-    models_dir = 'models'
+    models_dir = 'models/dev'
     model_dir = os.path.join(models_dir, model_type)
     os.makedirs(model_dir, exist_ok=True)
     joblib.dump(model, os.path.join(model_dir, f'{model_type}_model.pkl'))
     joblib.dump(label_encoder, os.path.join(model_dir, 'label_encoder.pkl'))
+
 
 def predict_and_evaluate(model: BaseEstimator, X_train: DataFrame, y_train: DataFrame, X_test: DataFrame, 
                          y_test: DataFrame, params: Dict[str, Any]) -> Tuple[float, float]:
@@ -326,8 +356,7 @@ def predict_and_evaluate(model: BaseEstimator, X_train: DataFrame, y_train: Data
             df[f'probability_{class_name}'] = y_prob[:, i]
         
         df.to_csv(save_path, index=False)
-        #print(y_prob)
-        #print(y)
+        
         # Generate and save visualizations and metrics
         generate_visualizations_and_save_metrics(predictions_dir, model_type, label_encoder, y, y_pred)
         generate_roc_curves_and_save(predictions_dir, model_type, label_encoder, y, y_prob)
@@ -337,7 +366,6 @@ def predict_and_evaluate(model: BaseEstimator, X_train: DataFrame, y_train: Data
 
     train_accuracy = predict_and_save(model, X_train, y_train, params, "train")
     test_accuracy = predict_and_save(model, X_test, y_test, params, "test")
-
 
     return train_accuracy, test_accuracy
 
@@ -362,7 +390,7 @@ def train_and_evaluate_model(train_df: DataFrame, test_df: DataFrame, params: Di
     train_accuracy, test_accuracy = predict_and_evaluate(model, X_train, y_train, X_test, y_test, params)
     save_model(model, params, label_encoder)
 
-    feature_names = list(X_train.columns)  
+    feature_names = list(X_train.columns)
     save_path = os.path.join(params['predictions_dir'], params['model_type'], "feature_importance.png")
     generate_feature_importance_visualization(model, feature_names, save_path)
 
@@ -370,10 +398,10 @@ def train_and_evaluate_model(train_df: DataFrame, test_df: DataFrame, params: Di
     print(f"Test accuracy: {test_accuracy:.2f}")
     return model
 
-
 def train_model_pipeline(params: Dict[str, Any]) -> BaseEstimator:
     """
-    Manages the process of splitting the data into train/test sets, encoding the target labels, and training a specified classifier.
+    Manages the process of splitting the data into train/test sets, encoding the target labels,
+    and training a specified classifier.
 
     Args:
     - params (dict): Dictionary containing the following key-value pairs:
