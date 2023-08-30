@@ -54,33 +54,126 @@ labeling:
   output_dir: data/interim/
 ```
 
-### Usage
+## Make Features
 
-To use this code, you can run the `run_pipelines.py` script with the following arguments:
+### Overview
 
-- `--reduce_quality`: Reduce video quality for quicker labeling.
-- `--label_data`: Label raw data.
+This code provides functionality to extract pose landmarks and angles from video frames and save them as intermediate features for further analysis and model training.
 
-Example commands:
+### Joint Angle Features
+
+Joint angle features provide insights into the positions and relationships of body parts in videos. These angles can be useful for understanding movement patterns and poses in the videos. Some of the extracted joint angle features include:
+
+- **Elbow Angle**: The angle formed between the shoulder, elbow, and wrist joints.
+- **Shoulder Angle**: The angle formed between the elbow, shoulder, and hip joints.
+- **Hip Angle**: The angle formed between the shoulder, hip, and knee joints.
+- **Knee Angle**: The angle formed between the ankle, knee, and hip joints.
+- **Spine Angle**: The angle formed between the left hip, right hip, and head landmarks.
+- **Torso Angle**: The angle formed between the left hip, right hip, and neck landmarks.
+
+These joint angles provide insights into the body's orientation and can be valuable features for training machine learning models to classify and analyze video data.
+
+### 1. **Extract Pose Landmarks and Features**
+
+The `extract_landmarks_and_features` function extracts pose landmarks and calculates various angles from the video frames. Here's how it operates:
+
+- **Input Videos**: The videos from which pose landmarks need to be extracted. These videos can be the original ones or the ones with reduced quality.
+- **Output Landmarks and Features**: The extracted landmarks and calculated angles are saved as CSV files for each video. The files are named as `{video_name}_landmarks.csv` and `{video_name}_features.csv`.
+
+The process goes as follows:
+
+1. For each video, the function processes each frame to extract pose landmarks using the Mediapipe library.
+2. The pose landmarks are used to calculate angles between different body parts, which are important features for analysis.
+3. The extracted landmarks and angles are saved in CSV files along with the corresponding video frame number.
+
+### 2. Combine Features from all CSV Files
+The `combine_csv_files` function combines CSV files in the given directory, specifically files with names ending in `_features.csv`. The merged data is then merged with labeled data to create the final feature dataset for model training.
+
+
+### Configuration
+The `params.yaml` file contains key-value pairs that configure the process of extracting pose landmarks and features from videos. These parameters control the input and output directories, settings for video processing, and paths to save the extracted features. 
+
+```yaml
+features:
+  input_video_dir: data/interim/reduced/
+  output_video_dir: data/processed/videos/
+  interim_features_directory: data/interim/features
+  labeled_dir: data/interim/labeled
+  write_video: False
+  final_features_directory: data/processed/features
+```
+
+## Model Training and Evaluation
+
+### Overview
+
+This code provides functionalities for training, evaluating, and saving machine learning models for video analysis tasks. The main components include:
+
+### 1. **Model Training and Saving**
+The `train_prod_model` function trains a machine learning model (e.g., XGBoost or RandomForest) on the entire dataset and saves it along with the label encoder.
+
+- **Input Data**: The final feature matrix and labels read from a CSV file.
+- **Model Type**: The type of model to be trained (specified in the `params` dictionary).
+- **Output**: The trained model and label encoder are saved in appropriate directories.
+
+### 2. **Generating Evaluation Metrics**
+Functions such as `generate_roc_curves_and_save`, `generate_pr_curves_and_save`, `generate_visualizations_and_save_metrics`, and `generate_feature_importance_visualization` are used to generate evaluation metrics and visualizations for the trained models.
+
+### 3. **Model Training Pipeline**
+The `train_model_pipeline` function manages the process of splitting data, encoding labels, training the classifier, and saving the trained model.
+
+- **Parameters**: Configurable parameters include the file paths, model type, test size, model-specific parameters, and directory paths.
+
+### Configuration
+
+You can configure the model training and evaluation process through the `params.yaml` file. The key-value pairs include file paths, model type, test size, and model-specific parameters.
+
+#### Example `params.yaml`
+
+```yaml
+model_dev:
+  model_type: xgb
+  final_features_filepath: data/processed/features/final_features.csv
+  test_size: 0.3
+  target_column: label
+  predictions_dir: data/results/
+  optimize_hyperparams: True
+
+model_prod:
+  model_type: xgb
+  final_features_filepath: data/processed/features/final_features.csv
+  target_column: label
+```
+
+
+## Usage
+
+### 1. Reduce Video Quality
 
 ```bash
 python run_pipelines.py --reduce_quality
+```
+### 2. Label Video Data
+
+```bash
 python run_pipelines.py --label_data 
 ```
-
-### Functions
-
-#### `reduce_video_size(params: dict) -> None`
-
-Reduces the video quality in the given directory. The reduction factor can be specified in the `params` dictionary.
-
-#### `label_frames(params: dict, video_path: str, skip_frames: int) -> list`
-
-Allows labeling frames from the specified video file.
-
-#### `run_labeling(params: dict) -> None`
-
-Executes the labeling process for all video files in the specified input directory and saves the labels to CSV files.
+### 3. Make Features
+```
+python run_pipelines.py --label_data
+```
+### 4. Combine Feature CSVs
+```bash
+python run_pipelines.py --combine_feature_csv
+```
+### 5. Train Development Model
+```bash
+python run_pipelines.py --train_dev_model
+```
+### 6. Train Production Model
+```bash
+python run_pipelines.py --train_prod_model
+```
 
 
 # Directory Structure
