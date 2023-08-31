@@ -1,8 +1,8 @@
 import sys
 import argparse
 import yaml
-from src.data.label import run_labeling
-from src.data.video_processing import reduce_video_size
+from src.data.label import run_labeling, apply_mirror_labels
+from src.data.video_processing import process_videos
 from src.features.make_features import extract_landmarks_and_features, combine_csv_files
 from src.models.train_dev_model import train_model_pipeline
 from src.models.train_prod_model import train_prod_model
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--reduce_quality",
+        "--process_videos",
         help="reduce video quality for quicker labeling",
         action="store_true"
     )
@@ -21,6 +21,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--label_data",
         help="label raw data",
+        action="store_true"
+    )
+    parser.add_argument(
+        "--apply_mirrored_label_data",
+        help="label mirrored videos",
         action="store_true"
     )
 
@@ -56,8 +61,8 @@ if __name__ == "__main__":
         with open("params.yaml") as f:
             params = yaml.safe_load(f)
 
-        if args.reduce_quality:
-            reduce_video_size(
+        if args.process_videos:
+            process_videos(
                 params['video_processing']
             )
 
@@ -66,6 +71,11 @@ if __name__ == "__main__":
                 params['labeling']
             )
         
+        if args.apply_mirrored_label_data:
+            apply_mirror_labels(
+                params['labeling']
+            )
+
         if args.make_features:
             extract_landmarks_and_features(
                 params['features']

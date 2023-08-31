@@ -3,7 +3,7 @@ import os
 import shutil
 import tempfile
 import cv2
-
+import pandas as pd
 
 def label_frames(params: dict, video_path: str, skip_seconds: float) -> list:
     """
@@ -131,3 +131,37 @@ def run_labeling(params: dict) -> None:
         print(f"Labeled {filename} successfully and saved to {output_file}.")
 
     print(f"All {total_videos} videos labeled.")
+
+
+def apply_mirror_labels(params: dict) -> None:
+    """
+    Applies labels from original labeled videos to the corresponding mirrored videos.
+    The mirrored labels are saved to CSV files in the specified output directory.
+
+    Parameters:
+    params (dict): Dictionary containing the following key-value pairs:
+        - 'labeled_dir': Directory containing labeled CSV files.
+        - 'input_video_dir': Directory containing input video files.
+    """
+
+    labeled_dir = params['output_dir']
+    input_video_dir = params['input_video_dir']
+
+    mirrored_video_filenames = [f for f in os.listdir(input_video_dir) if f.startswith("mirrored_")]
+
+    if len(mirrored_video_filenames)>0:
+        for mirrored_video_filename in mirrored_video_filenames:
+            print(f"adding label files for: {mirrored_video_filename}")
+
+            # get corresponding non-mirrored label file
+            corresponding_label_file = mirrored_video_filename.replace('mirrored_', '').replace('.mov', '_labeled.csv')
+            corresponding_labeled_filepath = os.path.join(labeled_dir, corresponding_label_file)
+            mirrored_label_filepath = os.path.join(labeled_dir, f'mirrored_{corresponding_label_file}')
+
+            # Copy the corresponding labeled file to the mirrored label file
+            shutil.copyfile(corresponding_labeled_filepath, mirrored_label_filepath)
+
+            print(f"Mirrored labels applied and saved to {mirrored_label_filepath}.")
+
+    else:
+        print("no mirrored files to process")

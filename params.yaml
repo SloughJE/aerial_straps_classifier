@@ -2,6 +2,7 @@ video_processing:
   input_video_dir: data/raw/original/
   output_video_dir: data/interim/reduced/
   reduction_factor: 4
+  mirror_videos: True
 
 labeling:
   labels:
@@ -25,7 +26,7 @@ features:
   final_features_directory: data/processed/features
 
 model_dev:
-  model_type: xgb
+  model_type: rf
   final_features_filepath: data/processed/features/final_features.csv
   test_size: 0.3
   target_column: label
@@ -33,7 +34,7 @@ model_dev:
   optimize_hyperparams: True
 
 model_prod:
-  model_type: xgb
+  model_type: rf
   final_features_filepath: data/processed/features/final_features.csv
   target_column: label
   
