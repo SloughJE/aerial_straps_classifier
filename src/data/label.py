@@ -158,9 +158,10 @@ def apply_mirror_labels(params: dict) -> None:
             corresponding_labeled_filepath = os.path.join(labeled_dir, corresponding_label_file)
             mirrored_label_filepath = os.path.join(labeled_dir, f'mirrored_{corresponding_label_file}')
 
-            # Copy the corresponding labeled file to the mirrored label file
-            shutil.copyfile(corresponding_labeled_filepath, mirrored_label_filepath)
-
+            # read in og label file, add mirrored_ to filename and df column
+            df = pd.read_csv(corresponding_labeled_filepath)
+            df['filename'] = "mirrored_"+df.filename
+            df.to_csv(mirrored_label_filepath,index=False)
             print(f"Mirrored labels applied and saved to {mirrored_label_filepath}.")
 
     else:
