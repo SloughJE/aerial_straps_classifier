@@ -18,12 +18,22 @@ The `label_frames` and `run_labeling` functions are responsible for allowing the
 - **Input Video Directory**: The directory containing the videos that need to be labeled. This could be the original videos or the reduced-quality videos.
 - **Output Directory**: The directory where the labeled data will be saved. A separate CSV file is output for each video file, named the same as the video. For example, if the video is named "example.mov", the CSV file will be named "example.csv".
 
-The process goes as follows:
+**Summary**:
+The `label_frames` function allows the user to manually label frames from a specified video file. The user is presented with a frame every `skip_seconds` (calculated by number of seconds to skip and frame rate of video) and assigns a label to it. This label is then applied to all frames from the previously labeled frame up to and including the current frame. At the end of the video, the user labels the final frame, and this label is applied to all remaining frames. This table respresents the approach.
 
-1. The video is played frame by frame (skipping the set number of frames).
-2. The user is prompted to label the current frame by pressing a key that corresponds to one of the configured labels.
-3. The same label is automatically applied to the next 'skip_frames' number of frames.
-4. The labeling data is saved to a CSV file, where each row contains the frame number, the filename, and the label.
+**Table**:
+
+| Frame Number Displayed | Pressed Key | Label Assigned | Frames Labeled |
+|------------------------|-------------|----------------|----------------|
+| 0                      | ‘a’         | Apple          | 0              |
+| 5                      | ‘b’         | Banana         | 1,2,3,4,5      |
+| 10                     | ‘a’         | Apple          | 6,7,8,9,10     |
+| 15                     | 'c'         | Cherry         | 11,12,13,14,15 |
+| 20                     | ‘c'         | Cherry         | 16,17,18,19,20 |
+| 22                     | 'a'         | Apple          | 21,22          |
+
+**Explanation**: 
+In this example, there are 22 frames in total, and `skip_frames` is set to 5. The user is first presented with frame 0 and assigns the label 'Apple'. This label is applied to frame 0. Next, the user is presented with frame 5 and assigns the label 'Banana'. This label is then applied to frames 1 through 5. This process continues until the end of the video. At the end, the user is presented with the final frame (frame 22) and assigns the label 'Apple'. This label is then applied to frames 21 and 22.
 
 These functions make it efficient to label video data for machine learning tasks or other analyses, especially when the videos contain continuous segments with the same characteristics.
 

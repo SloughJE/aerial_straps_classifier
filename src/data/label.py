@@ -5,51 +5,35 @@ import tempfile
 import cv2
 import pandas as pd
 
+
 def label_frames(params: dict, video_path: str, skip_seconds: float) -> list:
-    """
-    Allows the user to label frames from the specified video file. 
-    The user can label a frame, and the same label will be applied to 
-    the subsequent frames with a time interval specified in seconds (skip_seconds).
-
-    Parameters:
-    params (dict): Dictionary containing the following key-value pairs:
-        - 'labels': Dictionary mapping keypresses to corresponding labels.
-    video_path (str): Path to the video file to be labeled.
-    skip_seconds (float): Time interval in seconds to skip between labeled frames. 
-    Same label is applied to skipped frames.
-
-    Returns:
-    list: A list of tuples, where each tuple contains the frame number and the corresponding label.
-    """
-
     label_mapping = params['labels']
 
     cap = cv2.VideoCapture(video_path)
     frame_number = 0
     labels = []
-    last_label = 'unknown'  # Keep track of the last label
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = cap.get(cv2.CAP_PROP_FPS)
+    fps_rounded = round(fps)
+    skip_frames = int(fps_rounded * skip_seconds)
 
+    print(total_frames)
     while frame_number < total_frames:
-        # Seek to the desired frame
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
         ret, frame = cap.read()
         if not ret:
             break
 
-        # Display the frame
         cv2.imshow('Video Frame', frame)
 
-        while True:  # Keep asking for input until a valid key is pressed
+        while True:
             key = cv2.waitKey(0)
-            char_key = chr(key & 0xFF)  # Get the character representation of the key
-
-            if char_key == 'q':  # Press 'q' to quit
+            char_key = chr(key & 0xFF)
+            if char_key == 'q':
                 print(f"Warning: You are quitting the labeling for {video_path}. \
                       The current progress will not be saved.")
-                exit(0)  # Exit the entire program
-            elif char_key in label_mapping:  # Check if the key corresponds to a label
+                exit(0)
+            elif char_key in label_mapping:
                 label = label_mapping[char_key]
                 break
             else:
@@ -57,23 +41,47 @@ def label_frames(params: dict, video_path: str, skip_seconds: float) -> list:
                       Please press one of the following keys for labeling or 'q' to quit:")
                 for k, v in label_mapping.items():
                     print(f"  Press '{k}' for {v}")
-                if char_key == 'q':  # Break outer loop if 'q' was pressed
-                    break
 
-        # Calculate the number of frames to skip based on the desired skip_seconds
-        fps_rounded = round(fps)  # Round the fps to the nearest whole number
-        skip_frames = int(fps_rounded * skip_seconds)
-
-        # Store the label for this frame and all skipped frames
-        for i in range(frame_number, min(frame_number + skip_frames + 1, total_frames)):  # +1 to include the current frame
+        # Label the current frame and all the previous frames that were skipped
+        for i in range(max(0, frame_number - skip_frames + 1), frame_number + 1):
             labels.append((i, label))
 
-        last_label = label
-        frame_number += skip_frames + 1  # Increment by the number of skipped frames + 1 for the current frame
+        frame_number += skip_frames
+
+    # Process the last frames if there are any left
+    if frame_number >= total_frames:
+        print("labeling final frame")
+        # Display the last frame
+        cap.set(cv2.CAP_PROP_POS_FRAMES, total_frames - 1)
+        ret, frame = cap.read()
+        if ret:
+            cv2.imshow('Video Frame', frame)
+
+            while True:
+                key = cv2.waitKey(0)
+                char_key = chr(key & 0xFF)
+                if char_key == 'q':
+                    print(f"Warning: You are quitting the labeling for {video_path}. \
+                          The current progress will not be saved.")
+                    exit(0)
+                elif char_key in label_mapping:
+                    label = label_mapping[char_key]
+                    break
+                else:
+                    print("Invalid key pressed. \
+                          Please press one of the following keys for labeling or 'q' to quit:")
+                    for k, v in label_mapping.items():
+                        print(f"  Press '{k}' for {v}")
+
+            # Apply the label to all the remaining frames
+            for i in range(frame_number - skip_frames, total_frames):
+                labels.append((i, label))
 
     cap.release()
     cv2.destroyAllWindows()
     return labels
+
+
 
 
 
