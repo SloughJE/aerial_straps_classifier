@@ -26,16 +26,16 @@ def process_media(params: dict, media_type: str) -> None:
         reduction_factor = media_processing_config['reduction_factor']
     else:
         reduction_factor = None
-
+    print(f"loading media from {input_media_dir}")
     # Create the output directory if it doesn't exist
     if not os.path.exists(output_media_dir):
         print("creating output directory...")
         os.makedirs(output_media_dir)
 
     # Filter files based on the media type
-    valid_extensions = (".mov", ".mp4") if media_type == 'videos' else (".jpg", ".jpeg", ".png")
+    valid_extensions = (".mov", ".mp4") if media_type == 'video' else (".jpg", ".jpeg", ".png")
     media_files = [f for f in os.listdir(input_media_dir) if f.lower().endswith(valid_extensions)]
-
+    
     for idx, filename in enumerate(media_files):
         input_media_path = os.path.join(input_media_dir, filename)
         output_media_path = os.path.join(output_media_dir, filename)
@@ -45,7 +45,7 @@ def process_media(params: dict, media_type: str) -> None:
             continue
         print(f"Processing {media_type}: {filename}")
 
-        if media_type == 'videos':
+        if media_type == 'video':
             reduce_video_size(input_media_path, output_media_path, reduction_factor)
         elif media_type == 'photo':
             # Process photos (e.g., resizing) here if needed
@@ -54,7 +54,7 @@ def process_media(params: dict, media_type: str) -> None:
 
         if mirror_media:
             print(f"Mirroring {media_type}: {filename}")
-            mirror_function = mirror_video if media_type == 'videos' else mirror_photo
+            mirror_function = mirror_video if media_type == 'video' else mirror_photo
             mirror_function(input_media_path, output_media_dir)
             print(f"Mirrored {media_type}: {filename}")
 
