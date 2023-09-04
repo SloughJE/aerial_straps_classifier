@@ -25,7 +25,7 @@ def train_prod_model(params: Dict[str, str]) -> None:
     elif model_type == 'rf':
         model = RandomForestClassifier()
 
-    X_full = df.drop(columns=[target_column, 'video_frame', 'filename'])
+    X_full = df.drop(columns=[target_column, 'frame_number', 'filename'])
     y_full = df[target_column]
 
     le = LabelEncoder()

@@ -7,11 +7,15 @@ def extract_landmarks_from_frame(frame_rgb, pose):
     results = pose.process(frame_rgb)
     
     if results.pose_landmarks:
+        # Annotate the frame with landmarks
+        annotated_frame = frame_rgb.copy()
+        mp.solutions.drawing_utils.draw_landmarks(annotated_frame, results.pose_landmarks, mp.solutions.pose.POSE_CONNECTIONS)
+        
         features = []
         for landmark in results.pose_landmarks.landmark:
             features.extend([landmark.x, landmark.y, landmark.z, landmark.visibility, landmark.presence])
-        return features
-    return []
+        return features, annotated_frame
+    return [], frame_rgb
 
 
 # Helper function to calculate additional features
@@ -54,11 +58,13 @@ def extract_landmarks(input_source, output_destination, is_video=True, write_out
                     break
 
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                landmarks = extract_landmarks_from_frame(frame_rgb, pose)
+                landmarks, annotated_frame = extract_landmarks_from_frame(frame_rgb, pose)  # unpack the tuple
                 
                 if landmarks:
                     df_landmarks.loc[frame_count] = [frame_count] + landmarks
-                
+                    if write_output:
+                        out.write(cv2.cvtColor(annotated_frame, cv2.COLOR_RGB2BGR))  # Save the annotated frame to the video
+
                 frame_count += 1
 
             cap.release()
@@ -68,12 +74,13 @@ def extract_landmarks(input_source, output_destination, is_video=True, write_out
         else:  # for photo
             frame = cv2.imread(input_source)
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            landmarks = extract_landmarks_from_frame(frame_rgb, pose)
+            landmarks, annotated_frame = extract_landmarks_from_frame(frame_rgb, pose)
             
             if landmarks:
                 df_landmarks.loc[0] = landmarks
             if write_output:
-                cv2.imwrite(output_destination, frame)
+                # Save the annotated frame, not the original one
+                cv2.imwrite(output_destination, cv2.cvtColor(annotated_frame, cv2.COLOR_RGB2BGR))
             df_landmarks['frame_number'] = 0  # Adding frame_number for photos
 
     calculate_additional_features(df_landmarks)

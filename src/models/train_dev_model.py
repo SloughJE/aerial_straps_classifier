@@ -253,9 +253,9 @@ def preprocess_data(train_df: DataFrame, test_df: DataFrame,
     - y_test (DataFrame): The testing target.
     - groups (DataFrame): The groups for the training data.
     """
-    X_train = train_df.drop(columns=[target_column, 'video_frame', 'filename'])
+    X_train = train_df.drop(columns=[target_column, 'frame_number', 'filename'])
     y_train = train_df[target_column]
-    X_test = test_df.drop(columns=[target_column, 'video_frame', 'filename'])
+    X_test = test_df.drop(columns=[target_column, 'frame_number', 'filename'])
     y_test = test_df[target_column]
     groups = train_df['filename']
     return X_train, y_train, X_test, y_test, groups
