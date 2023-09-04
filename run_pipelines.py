@@ -2,7 +2,7 @@ import sys
 import argparse
 import yaml
 from src.data.label import run_labeling, apply_mirror_labels
-from src.data.video_processing import process_videos
+from src.data.process_media import process_media
 from src.features.make_features import extract_landmarks_and_features, combine_csv_files
 from src.models.train_dev_model import train_model_pipeline
 from src.models.train_prod_model import train_prod_model
@@ -12,12 +12,19 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--process_videos",
-        help="reduce video quality for quicker labeling",
-        action="store_true"
-    )
 
+    parser.add_argument(
+        "--process_videos", 
+        action="store_true", 
+        help="Process videos (reduce size for quicker labeling, mirror videos)"
+    )
+    
+    parser.add_argument(
+        "--process_photos", 
+        action="store_true", 
+        help="Process photos (mirror photos)"
+    )
+ 
     parser.add_argument(
         "--label_data",
         help="label raw data",
@@ -62,9 +69,14 @@ if __name__ == "__main__":
             params = yaml.safe_load(f)
 
         if args.process_videos:
-            process_videos(
-                params['video_processing']
-            )
+            process_media(
+                params['media_processing'], 'video'
+                ) 
+
+        if args.process_photos:
+            process_media(
+                params['media_processing'], 'photo'
+                )
 
         if args.label_data:
             run_labeling(

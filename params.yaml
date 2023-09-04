@@ -1,8 +1,14 @@
-video_processing:
-  input_video_dir: data/raw/original/
-  output_video_dir: data/interim/reduced/
-  reduction_factor: 4
-  mirror_videos: True
+media_processing:
+  video_processing:
+    input_video_dir: data/raw/original/
+    output_video_dir: data/interim/reduced/
+    reduction_factor: 4
+    mirror_videos: True
+
+  photo_processing:
+    input_photo_dir: data/raw/photos/
+    output_photo_dir: data/interim/photos/
+    mirror_photos: True
 
 labeling:
   labels:
