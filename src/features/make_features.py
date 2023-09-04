@@ -5,7 +5,7 @@ import os
 import pandas as pd
 import numpy as np
 
-from .video_features import extract_landmarks
+from .video_features import extract_landmarks_for_video
 from .photo_features import extract_landmarks_for_photo
 
 
@@ -52,7 +52,7 @@ def extract_angles(row):
     return pd.Series(angles)
 
 
-def extract_landmarks_and_features(params: dict):
+def extract_landmarks_and_features_for_videos(params: dict):
 
     input_directory = params['input_video_dir']
     output_directory = params['output_video_dir']
@@ -76,7 +76,7 @@ def extract_landmarks_and_features(params: dict):
         output_video = os.path.join(output_directory, video_file)
         print(f"Processing video: {input_video}")
 
-        df_landmarks = extract_landmarks(input_video, output_video, write_video)
+        df_landmarks = extract_landmarks_for_video(input_video, output_video, write_video)
         
         video_name = os.path.splitext(os.path.basename(input_video))[0]
         csv_file_path = os.path.join(features_directory, f'{video_name}_landmarks.csv')

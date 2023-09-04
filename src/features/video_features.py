@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 
-def extract_landmarks(input_video, output_video, write_video=True):
+def extract_landmarks_for_video(input_video, output_video, write_video=True):
 
     cap = cv2.VideoCapture(input_video)
     fps = int(cap.get(cv2.CAP_PROP_FPS))
