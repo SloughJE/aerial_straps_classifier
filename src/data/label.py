@@ -82,60 +82,98 @@ def label_frames(params: dict, video_path: str, skip_seconds: float) -> list:
     return labels
 
 
-def run_labeling(params: dict) -> None:
-    """
-    Executes the labeling process for all video files in the specified input directory.
-    Skips videos that have already been labeled.
-    Labels and frame numbers are saved to CSV files in the specified output directory.
+def label_photos(params: dict, photo_path: str) -> list:
+    label_mapping = params['labels']
+    labels = []
+    
+    image = cv2.imread(photo_path)
+    cv2.imshow('Photo', image)
 
+    while True:
+        key = cv2.waitKey(0)
+        char_key = chr(key & 0xFF)
+        if char_key == 'q':
+            print(f"Warning: You are quitting the labeling for {photo_path}. The current progress will not be saved.")
+            exit(0)
+        elif char_key in label_mapping:
+            label = label_mapping[char_key]
+            break
+        else:
+            print("Invalid key pressed. Please press one of the following keys for labeling or 'q' to quit:")
+            for k, v in label_mapping.items():
+                print(f"  Press '{k}' for {v}")
+
+    labels.append((photo_path, label))
+    cv2.destroyAllWindows()
+    return labels
+
+
+def run_labeling(params: dict, mode: str) -> None:
+    """Executes the labeling process for media files (either videos or photos) in the specified input directory.
+    Skips files that have already been labeled or start with 'mirrored_'.
+    Labels and filenames (or frame numbers for videos) are saved to CSV files in the specified output directory.
+    
     Parameters:
-    params (dict): Dictionary containing the following key-value pairs:
-        - 'input_video_dir': Directory containing video files to be labeled.
-        - 'output_dir': Directory where labeled CSV files will be saved.
-        - 'skip_seconds': Number of frames to skip between labeled frames. 
-        Same label is applied to skipped frames.
+    params (dict): Dictionary containing parameters for labeling.
+    mode (str): Either 'video' or 'photo', depending on the media being labeled.
     """
-
-    input_video_dir = params['input_video_dir']
+    
+    # Determine the input directory based on the mode
+    input_dir = params['input_video_dir'] if mode == "video" else params['input_photo_dir']
     output_dir = params['output_dir']
-    skip_seconds = params['skip_seconds']
+    skip_seconds = params.get('skip_seconds', None)  # may not be needed for photos
+    
+    # Fetch appropriate files from the directory based on their extensions and avoid 'mirrored_' prefix
+    if mode == "video":
+        extensions = [".mov", ".mp4"]
+    elif mode == "photo":
+        extensions = [".jpg", ".jpeg", ".png"]
+    else:
+        raise ValueError("Invalid mode provided. Expected 'video' or 'photo'.")
+    
+    files = [f for f in os.listdir(input_dir) if not f.lower().startswith("mirrored_") and any(f.lower().endswith(ext) for ext in extensions)]
+    
+    total_files = len(files)
+    print(f"Total number of {mode}s to label: {total_files}")
 
-    video_files = [f for f in os.listdir(input_video_dir) if f.endswith(".mov") or f.endswith(".mp4")]
-    total_videos = len(video_files)
+    for idx, filename in enumerate(files):
+        file_path = os.path.join(input_dir, filename)
+        base_name = os.path.splitext(filename)[0]
 
-    print(f"Total number of videos to label: {total_videos}")
-
-    for idx, filename in enumerate(video_files):
-        video_path = os.path.join(input_video_dir, filename)
-        video_name = os.path.splitext(filename)[0]
-
-        output_file = os.path.join(output_dir, video_name) + "_labeled.csv"
+        output_file = os.path.join(output_dir, f"{mode}_") + base_name + "_labeled.csv"
         
-        # Check if this video has already been labeled
+        # Check if this file has already been labeled
         if os.path.exists(output_file):
-            print(f"Skipping {filename} ({idx + 1} of {total_videos}) - already labeled.")
+            print(f"Skipping {filename} ({idx + 1} of {total_files}) - already labeled.")
             continue
 
-        print(f"Labeling {filename} ({idx + 1} of {total_videos})")
+        print(f"Labeling {filename} ({idx + 1} of {total_files})")
 
-        labels = label_frames(params, video_path, skip_seconds)
+        # Label the media based on the mode
+        if mode == "video":
+            labels = label_frames(params, file_path, skip_seconds)
+        else:
+            labels = label_photos(params, file_path)
+        
+        # Save the labels to a temporary CSV file
         temp_file = tempfile.NamedTemporaryFile(mode='w+', newline='', delete=False)
-
         print(f"Saving temporary output to: {temp_file.name}")
         with temp_file as csvfile:
-            fieldnames = ['video_frame', 'filename', 'label']
+            fieldnames = ['frame_number', 'filename', 'label']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
+            
+            for item, label in labels:
+                # If mode is 'photo', set frame_number to 0, else keep the original frame number
+                frame_number = 0 if mode == 'photo' else item
+                writer.writerow({'frame_number': frame_number, 'filename': filename, 'label': label})
 
-            for video_frame, label in labels:
-                writer.writerow({'video_frame': video_frame, 'filename': filename, 'label': label})
 
-        # Move temporary file to final destination once the labeling is completed
+        # Move the temporary CSV file to the final output directory
         shutil.move(temp_file.name, output_file)
-
         print(f"Labeled {filename} successfully and saved to {output_file}.")
 
-    print(f"All {total_videos} videos labeled.")
+    print(f"All {total_files} {mode}s labeled.")
 
 
 def apply_mirror_labels(params: dict) -> None:
