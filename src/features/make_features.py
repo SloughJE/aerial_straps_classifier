@@ -184,7 +184,11 @@ def combine_csv_files(params: dict) -> None:
     final_df = pd.merge(combined_df, labeled_df, on=['filename', 'frame_number'], how='left')
 
     if final_df['label'].isna().any():
+        missing_label_filenames = final_df.loc[final_df['label'].isna(), 'filename'].unique()
         print("Some rows do not have matching labels. Consider checking your labeled data.")
+        print("Files with missing labels:")
+        for filename in missing_label_filenames:
+            print(filename)
 
     label_counts = final_df['label'].value_counts()
     print("\nNumber of rows per label:")
