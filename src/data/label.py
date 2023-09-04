@@ -178,34 +178,45 @@ def run_labeling(params: dict, mode: str) -> None:
 
 def apply_mirror_labels(params: dict) -> None:
     """
-    Applies labels from original labeled videos to the corresponding mirrored videos.
+    Applies labels from original labeled media to the corresponding mirrored media.
     The mirrored labels are saved to CSV files in the specified output directory.
 
     Parameters:
     params (dict): Dictionary containing the following key-value pairs:
-        - 'labeled_dir': Directory containing labeled CSV files.
+        - 'output_dir': Directory where labeled CSV files will be saved.
         - 'input_video_dir': Directory containing input video files.
+        - 'input_photo_dir': Directory containing input photo files.
     """
 
     labeled_dir = params['output_dir']
     input_video_dir = params['input_video_dir']
+    input_photo_dir = params['input_photo_dir']
 
-    mirrored_video_filenames = [f for f in os.listdir(input_video_dir) if f.startswith("mirrored_")]
+    # Loop through both video and photo directories
+    for input_dir, file_ext, prefix in [(input_video_dir, ['.MOV', '.MP4', '.mov', '.mp4'], 'video_'), 
+                                       (input_photo_dir, ['.JPG', '.JPEG', '.PNG', '.jpg', '.jpeg', '.png'], 'photo_')]:
+        
+        mirrored_filenames = [f for f in os.listdir(input_dir) 
+                              if f.lower().startswith("mirrored_") and f.lower().endswith(tuple([ext.lower() for ext in file_ext]))]
+        
+        if mirrored_filenames:
+            for mirrored_filename in mirrored_filenames:
+                print(f"Adding label files for: {mirrored_filename}")
 
-    if len(mirrored_video_filenames)>0:
-        for mirrored_video_filename in mirrored_video_filenames:
-            print(f"adding label files for: {mirrored_video_filename}")
+                # Determine the correct file extension for label based on mode
+                label_ext = '_labeled.csv'
 
-            # get corresponding non-mirrored label file
-            corresponding_label_file = mirrored_video_filename.replace('mirrored_', '').replace('.mov', '_labeled.csv')
-            corresponding_labeled_filepath = os.path.join(labeled_dir, corresponding_label_file)
-            mirrored_label_filepath = os.path.join(labeled_dir, f'mirrored_{corresponding_label_file}')
+                # Get corresponding non-mirrored label file
+                base_name = mirrored_filename.replace('mirrored_', '').rsplit('.', 1)[0]
+                corresponding_label_file = prefix + base_name + label_ext
+                corresponding_labeled_filepath = os.path.join(labeled_dir, corresponding_label_file)
+                
+                mirrored_label_filepath = os.path.join(labeled_dir, f'{prefix}mirrored_{base_name}{label_ext}')
 
-            # read in og label file, add mirrored_ to filename and df column
-            df = pd.read_csv(corresponding_labeled_filepath)
-            df['filename'] = "mirrored_"+df.filename
-            df.to_csv(mirrored_label_filepath,index=False)
-            print(f"Mirrored labels applied and saved to {mirrored_label_filepath}.")
-
-    else:
-        print("no mirrored files to process")
+                # Read in original label file, add mirrored_ to filename and df column
+                df = pd.read_csv(corresponding_labeled_filepath)
+                df['filename'] = f'{prefix}mirrored_{base_name}'
+                df.to_csv(mirrored_label_filepath, index=False)
+                print(f"Mirrored labels applied and saved to {mirrored_label_filepath}.")
+        else:
+            print(f"No mirrored files to process in {input_dir}")
