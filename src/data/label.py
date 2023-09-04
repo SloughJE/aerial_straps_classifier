@@ -82,9 +82,6 @@ def label_frames(params: dict, video_path: str, skip_seconds: float) -> list:
     return labels
 
 
-
-
-
 def run_labeling(params: dict) -> None:
     """
     Executes the labeling process for all video files in the specified input directory.
