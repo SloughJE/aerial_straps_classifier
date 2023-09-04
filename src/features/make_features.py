@@ -3,9 +3,7 @@ import os
 import pandas as pd
 import numpy as np
 
-from .video_features import extract_landmarks_for_video
-from .photo_features import extract_landmarks_for_photo
-
+from .extract_landmarks import extract_landmarks
 
 def calculate_2d_angle( a, b, c):
     a = np.array([a[0], a[1]])
@@ -74,7 +72,7 @@ def extract_landmarks_and_features_for_videos(params: dict):
         output_video = os.path.join(output_directory, video_file)
         print(f"Processing video: {input_video}")
 
-        df_landmarks = extract_landmarks_for_video(input_video, output_video, write_video)
+        df_landmarks = extract_landmarks(input_video, output_video, write_video)
         
         video_name = os.path.splitext(os.path.basename(input_video))[0]
         csv_file_path = os.path.join(features_directory, f'{video_name}_landmarks.csv')
@@ -118,7 +116,7 @@ def extract_landmarks_and_features_for_photos(params: dict):
         output_photo = os.path.join(output_directory, photo_file)
         print(f"Processing photo: {input_photo}")
 
-        df_landmarks = extract_landmarks_for_photo(input_photo, output_photo, write_photo)
+        df_landmarks = extract_landmarks(input_photo, output_photo, write_photo)
 
         photo_name = os.path.splitext(os.path.basename(input_photo))[0]
         csv_file_path = os.path.join(features_directory, f'{photo_name}_landmarks.csv')
