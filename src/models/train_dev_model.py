@@ -112,6 +112,16 @@ def train_rf(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, params
 
     return model
 
+def get_class_weights(le: LabelEncoder) -> dict:
+    # Get encoded label for 'other pose or transition'
+    encoded_other = le.transform(['other pose or transition'])[0]  # Assuming 'o' is the label for 'other pose or transition'
+    
+    # Create weight dict
+    # For example, setting the weight for 'other pose or transition' to 0.5 and 1.5 for others
+    weights = {label: 10 if label != encoded_other else 1 for label in range(len(le.classes_))}
+    
+    return weights
+
 
 def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, params: Dict[str, Any]) -> XGBClassifier:
     """
@@ -127,10 +137,13 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, param
     - model (XGBClassifier): The trained XGB model.
     """
     optimize_hyperparams = params.pop('optimize_hyperparams', False)
-    
+    weights = get_class_weights(params['label_encoder'])
+    print(f"using class weights: {weights}")
+    sample_weights = np.array([weights[label] for label in y_train])
+
     def objective(trial):
         param = {
-            'n_estimators': trial.suggest_int('n_estimators', 100, 1000),
+            'n_estimators': trial.suggest_int('n_estimators', 50, 1000),
             'max_depth': trial.suggest_int('max_depth', 1, 20),
             'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3),
             'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
@@ -161,7 +174,7 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, param
         model = XGBClassifier() # later can: XGBClassifier(**params)
     
     # Fit model on the entire dataset
-    model.fit(X_train, y_train)
+    model.fit(X_train, y_train, sample_weight=sample_weights)
 
     return model
 
