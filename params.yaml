@@ -1,6 +1,6 @@
 media_processing:
   video_processing:
-    input_video_dir: data/raw/test/
+    input_video_dir: data/raw/original/
     output_video_dir: data/interim/reduced/
     reduction_factor: 4
     mirror_videos: True

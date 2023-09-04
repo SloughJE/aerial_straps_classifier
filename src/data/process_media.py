@@ -55,7 +55,7 @@ def process_media(params: dict, media_type: str) -> None:
         if mirror_media:
             print(f"Mirroring {media_type}: {filename}")
             mirror_function = mirror_video if media_type == 'video' else mirror_photo
-            mirror_function(input_media_path, output_media_dir)
+            mirror_function(output_media_path, output_media_dir)
             print(f"Mirrored {media_type}: {filename}")
 
         print(f"Processed {filename} ({idx + 1} of {len(media_files)})")
