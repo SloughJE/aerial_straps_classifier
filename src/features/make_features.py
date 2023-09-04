@@ -72,18 +72,19 @@ def extract_landmarks_and_features_for_videos(params: dict):
         output_video = os.path.join(output_directory, video_file)
         print(f"Processing video: {input_video}")
 
-        df_landmarks = extract_landmarks(input_video, output_video, write_video)
+        df_landmarks = extract_landmarks(input_video, output_video, True, write_video)
         
-        video_name = os.path.splitext(os.path.basename(input_video))[0]
-        csv_file_path = os.path.join(features_directory, f'{video_name}_landmarks.csv')
+        video_name = os.path.basename(input_video)
+        modified_video_name = "video_" + video_name
+        csv_file_path = os.path.join(features_directory, f'{modified_video_name}_landmarks.csv')
         print(f"Landmarks extracted and saved to {csv_file_path}")
-        df_landmarks['filename'] = video_file
+        df_landmarks['filename'] = modified_video_name
         df_landmarks.to_csv(csv_file_path, index=False)
 
         df_features = df_landmarks.apply(extract_angles, axis=1)
-        df_features['filename'] = video_file
+        df_features['filename'] = modified_video_name
         df_features['frame_number'] = df_landmarks['frame_number'] # Copying frame_number from df_landmarks to df_features
-        csv_file_path_features = os.path.join(features_directory, f'{video_name}_features.csv')
+        csv_file_path_features = os.path.join(features_directory, f'{modified_video_name}_features.csv')
         print(f"Features extracted and saved to {csv_file_path_features}")
         df_features.to_csv(csv_file_path_features, index=False)
 
@@ -116,18 +117,19 @@ def extract_landmarks_and_features_for_photos(params: dict):
         output_photo = os.path.join(output_directory, photo_file)
         print(f"Processing photo: {input_photo}")
 
-        df_landmarks = extract_landmarks(input_photo, output_photo, write_photo)
+        df_landmarks = extract_landmarks(input_photo, output_photo, False,  write_photo)
 
-        photo_name = os.path.splitext(os.path.basename(input_photo))[0]
-        csv_file_path = os.path.join(features_directory, f'{photo_name}_landmarks.csv')
+        photo_name = os.path.basename(input_photo)
+        modified_photo_name = "photo_" + photo_name  
+        csv_file_path = os.path.join(features_directory, f'{modified_photo_name}_landmarks.csv')
         print(f"Landmarks extracted and saved to {csv_file_path}")
-        df_landmarks['filename'] = photo_file
+        df_landmarks['filename'] = modified_photo_name
         df_landmarks.to_csv(csv_file_path, index=False)
 
         df_features = df_landmarks.apply(extract_angles, axis=1)
-        df_features['filename'] = photo_file
+        df_features['filename'] = modified_photo_name
         df_features['frame_number'] = df_landmarks['frame_number'] # Copying frame_number from df_landmarks to df_features
-        csv_file_path_features = os.path.join(features_directory, f'{photo_name}_features.csv')
+        csv_file_path_features = os.path.join(features_directory, f'{modified_photo_name}_features.csv')
         print(f"Features extracted and saved to {csv_file_path_features}")
         df_features.to_csv(csv_file_path_features, index=False)
 
@@ -137,42 +139,53 @@ def extract_landmarks_and_features_for_photos(params: dict):
 
 
 def combine_csv_files(params: dict) -> None:
-    """
-    Combine CSV files in the given directory with filenames ending in '_features.csv' 
-    and merge with labeled data to create the final features dataframe.
 
-    Args:
-        params (dict): Dictionary containing the following key-value pairs:
-            - 'interim_features_directory': Directory containing interim feature CSV files.
-            - 'final_features_directory': Directory where the final features CSV will be saved.
-            - 'labeled_dir': Directory containing labeled CSV files.
-
-    Returns:
-        None
-    """
     interim_features_directory = params['interim_features_directory']
     final_features_directory = params['final_features_directory']
     labeled_dir = params['labeled_dir']
 
-    # Get list of all CSV files in the interim_features_directory with filenames ending in '_features.csv'
-    csv_files = [f for f in os.listdir(interim_features_directory) if f.endswith('_features.csv')]
-    print(f"Combining {len(csv_files)} interim feature files")
-    
-    # Create a list of dataframes by reading each CSV file
-    list_of_dfs = [pd.read_csv(os.path.join(interim_features_directory, f)) for f in csv_files]
+    if not os.path.exists(interim_features_directory) or not os.path.exists(labeled_dir):
+        print(f"Either the interim features directory or the labeled directory does not exist.")
+        return
 
-    # Concatenate all dataframes into a single dataframe
+    # Ensure output directory exists
+    if not os.path.exists(final_features_directory):
+        os.makedirs(final_features_directory)
+
+    csv_files = [f for f in os.listdir(interim_features_directory) if f.lower().endswith('_features.csv')]
+    print(f"Combining {len(csv_files)} interim feature files")
+
+    if not csv_files:
+        print("No interim feature files found.")
+        return
+
+    list_of_dfs = []
+    for file in csv_files:
+        try:
+            list_of_dfs.append(pd.read_csv(os.path.join(interim_features_directory, file)))
+        except Exception as e:
+            print(f"Error reading {file}: {e}")
+
     combined_df = pd.concat(list_of_dfs, ignore_index=True)
 
-    # Load all labeled CSV files
-    labeled_csv_files = [f for f in os.listdir(labeled_dir) if f.endswith('_labeled.csv')]
-    labeled_dfs = [pd.read_csv(os.path.join(labeled_dir, f)) for f in labeled_csv_files]
-    labeled_df = pd.concat(labeled_dfs, ignore_index=True)
+    labeled_csv_files = [f for f in os.listdir(labeled_dir) if f.lower().endswith('_labeled.csv')]
+    labeled_dfs = []
+    for file in labeled_csv_files:
+        try:
+            labeled_dfs.append(pd.read_csv(os.path.join(labeled_dir, file)))
+        except Exception as e:
+            print(f"Error reading labeled file {file}: {e}")
 
-    # Merge the labeled data into the final features dataframe
+    if not labeled_dfs:
+        print("No labeled files found.")
+        return
+
+    labeled_df = pd.concat(labeled_dfs, ignore_index=True)
     final_df = pd.merge(combined_df, labeled_df, on=['filename', 'frame_number'], how='left')
 
-    # Print out the count of rows per unique label
+    if final_df['label'].isna().any():
+        print("Some rows do not have matching labels. Consider checking your labeled data.")
+
     label_counts = final_df['label'].value_counts()
     print("\nNumber of rows per label:")
     for label, count in label_counts.items():

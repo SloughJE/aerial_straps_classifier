@@ -166,7 +166,8 @@ def run_labeling(params: dict, mode: str) -> None:
             for item, label in labels:
                 # If mode is 'photo', set frame_number to 0, else keep the original frame number
                 frame_number = 0 if mode == 'photo' else item
-                writer.writerow({'frame_number': frame_number, 'filename': filename, 'label': label})
+                prefixed_filename = f"{mode}_"+filename  # Add the prefix here
+                writer.writerow({'frame_number': frame_number, 'filename': prefixed_filename, 'label': label})
 
 
         # Move the temporary CSV file to the final output directory
@@ -215,7 +216,9 @@ def apply_mirror_labels(params: dict) -> None:
 
                 # Read in original label file, add mirrored_ to filename and df column
                 df = pd.read_csv(corresponding_labeled_filepath)
-                df['filename'] = f'{prefix}mirrored_{base_name}'
+                # Extract the file extension from mirrored_filename
+                file_ext = os.path.splitext(mirrored_filename)[1]
+                df['filename'] = f'{prefix}mirrored_{base_name}{file_ext}'
                 df.to_csv(mirrored_label_filepath, index=False)
                 print(f"Mirrored labels applied and saved to {mirrored_label_filepath}.")
         else:

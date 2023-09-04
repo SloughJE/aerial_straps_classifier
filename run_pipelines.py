@@ -26,12 +26,6 @@ if __name__ == "__main__":
     )
  
     parser.add_argument(
-        "--label_data",
-        help="label raw data",
-        action="store_true"
-    )
-
-    parser.add_argument(
         "--label_videos",
         help="label videos data",
         action="store_true"
