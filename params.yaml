@@ -27,9 +27,12 @@ labeling:
 features:
   input_video_dir: data/interim/reduced/
   output_video_dir: data/processed/videos/
+  save_annotated_video: False
+  input_photo_dir: data/interim/photos/
+  output_photo_dir: data/processed/photos/
+  save_annotated_photo: True
   interim_features_directory: data/interim/features
   labeled_dir: data/interim/labeled
-  write_video: False
   final_features_directory: data/processed/features
 
 model_dev:

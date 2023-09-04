@@ -3,7 +3,7 @@ import argparse
 import yaml
 from src.data.label import run_labeling, apply_mirror_labels
 from src.data.process_media import process_media
-from src.features.make_features import extract_landmarks_and_features, combine_csv_files
+from src.features.make_features import extract_landmarks_and_features, extract_landmarks_and_features_for_photos, combine_csv_files
 from src.models.train_dev_model import train_model_pipeline
 from src.models.train_prod_model import train_prod_model
 
@@ -50,7 +50,13 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--make_features",
+        "--make_features_videos",
+        help="make features",
+        action="store_true"
+    )
+
+    parser.add_argument(
+        "--make_features_photos",
         help="make features",
         action="store_true"
     )
@@ -106,8 +112,14 @@ if __name__ == "__main__":
                 params['labeling']
             )
 
-        if args.make_features:
+
+        if args.make_features_videos:
             extract_landmarks_and_features(
+                params['features']
+            )
+
+        if args.make_features_photos:
+            extract_landmarks_and_features_for_photos(
                 params['features']
             )
 

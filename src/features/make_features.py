@@ -5,80 +5,8 @@ import os
 import pandas as pd
 import numpy as np
 
-
-def extract_landmarks(input_video, output_video, write_video=True):
-
-    cap = cv2.VideoCapture(input_video)
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    # Only create a VideoWriter if we intend to write the video
-    out = cv2.VideoWriter(output_video, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height)) if write_video else None
-
-    # Define the columns for the DataFrame
-    columns = ['video_frame']
-    for landmark in mp.solutions.pose.PoseLandmark:
-        columns.extend([
-            f'{landmark.name}_x',
-            f'{landmark.name}_y',
-            f'{landmark.name}_z',
-            f'{landmark.name}_visibility',
-            f'{landmark.name}_presence'
-        ])
-    df_landmarks = pd.DataFrame(columns=columns)
-
-    frame_count = 0
-    with mp.solutions.pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complexity=1) as pose:
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            # Convert the frame to RGB format.
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame_rgb.flags.writeable = False
-
-            # Detect the pose landmarks.
-            results = pose.process(frame_rgb)
-
-            # Create a blank frame to draw the landmarks on.
-            blank_frame = np.zeros_like(frame)
-
-            # Render the landmarks on the blank frame.
-            if results.pose_landmarks:
-                mp.solutions.drawing_utils.draw_landmarks(blank_frame, results.pose_landmarks, mp.solutions.pose.POSE_CONNECTIONS)
-
-                # Extract all landmarks
-                features = [frame_count]
-                for landmark in results.pose_landmarks.landmark:
-                    features.extend([landmark.x, landmark.y, landmark.z, landmark.visibility, landmark.presence])
-
-                # Append the features to the DataFrame
-                df_landmarks.loc[frame_count] = features
-
-            # Write the frame to the video file if write_video is True
-            if write_video:
-                out.write(blank_frame)
-            frame_count += 1
-
-    cap.release()
-    if write_video:
-        out.release()
-
-    # Compute additional features
-    df_landmarks['HEAD_x'] = (df_landmarks['LEFT_EAR_x'] + df_landmarks['RIGHT_EAR_x']) / 2
-    df_landmarks['HEAD_y'] = (df_landmarks['LEFT_EAR_y'] + df_landmarks['RIGHT_EAR_y']) / 2
-    df_landmarks['HEAD_z'] = (df_landmarks['LEFT_EAR_z'] + df_landmarks['RIGHT_EAR_z']) / 2
-
-    df_landmarks['NECK_x'] = (df_landmarks['LEFT_SHOULDER_x'] + df_landmarks['RIGHT_SHOULDER_x']) / 2
-    df_landmarks['NECK_y'] = (df_landmarks['LEFT_SHOULDER_y'] + df_landmarks['RIGHT_SHOULDER_y']) / 2
-    df_landmarks['NECK_z'] = (df_landmarks['LEFT_SHOULDER_z'] + df_landmarks['RIGHT_SHOULDER_z']) / 2
-    
-    df_landmarks['video_frame'] = df_landmarks['video_frame'].astype(int)
-
-    return df_landmarks
-
+from .video_features import extract_landmarks
+from .photo_features import extract_landmarks_for_photo
 
 
 def calculate_2d_angle( a, b, c):
@@ -129,7 +57,11 @@ def extract_landmarks_and_features(params: dict):
     input_directory = params['input_video_dir']
     output_directory = params['output_video_dir']
     features_directory = params['interim_features_directory']
-    write_video = params['write_video']
+    write_video = params['save_annotated_video']
+    if write_video:
+        # Check if the directory exists, if not, create it
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
     # Get a list of all video files in the input directory
     video_files = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f)) and f.endswith(('.mp4', '.mov'))]
 
@@ -154,7 +86,7 @@ def extract_landmarks_and_features(params: dict):
 
         df_features = df_landmarks.apply(extract_angles, axis=1)
         df_features['filename'] = video_file
-        df_features['video_frame'] = df_landmarks['video_frame'] # Copying frame_number from df_landmarks to df_features
+        df_features['frame_number'] = df_landmarks['frame_number'] # Copying frame_number from df_landmarks to df_features
         csv_file_path_features = os.path.join(features_directory, f'{video_name}_features.csv')
         print(f"Features extracted and saved to {csv_file_path_features}")
         df_features.to_csv(csv_file_path_features, index=False)
@@ -162,6 +94,50 @@ def extract_landmarks_and_features(params: dict):
         print(f"Processed {video_file} ({idx + 1} of {total_videos})")
 
     print(f"{total_videos} video(s) processed successfully.")
+
+
+def extract_landmarks_and_features_for_photos(params: dict):
+    input_directory = params['input_photo_dir']
+    output_directory = params['output_photo_dir']
+    features_directory = params['interim_features_directory']
+    write_photo = params['save_annotated_photo']
+
+    photo_files = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f))\
+                        and f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+    if write_photo:
+        # Check if the directory exists, if not, create it
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+    
+    photos_to_process = [filename for filename in photo_files \
+                         if not os.path.exists(os.path.join(features_directory, os.path.splitext(filename)[0] + '_landmarks.csv'))]
+    total_photos = len(photos_to_process)
+    already_processed = len(photo_files) - total_photos
+    print(f"Total number of photos to process: {total_photos}.\nAlready processed {already_processed}.")
+
+    for idx, photo_file in enumerate(photos_to_process):
+        input_photo = os.path.join(input_directory, photo_file)
+        output_photo = os.path.join(output_directory, photo_file)
+        print(f"Processing photo: {input_photo}")
+
+        df_landmarks = extract_landmarks_for_photo(input_photo, output_photo, write_photo)
+
+        photo_name = os.path.splitext(os.path.basename(input_photo))[0]
+        csv_file_path = os.path.join(features_directory, f'{photo_name}_landmarks.csv')
+        print(f"Landmarks extracted and saved to {csv_file_path}")
+        df_landmarks['filename'] = photo_file
+        df_landmarks.to_csv(csv_file_path, index=False)
+
+        df_features = df_landmarks.apply(extract_angles, axis=1)
+        df_features['filename'] = photo_file
+        df_features['frame_number'] = df_landmarks['frame_number'] # Copying frame_number from df_landmarks to df_features
+        csv_file_path_features = os.path.join(features_directory, f'{photo_name}_features.csv')
+        print(f"Features extracted and saved to {csv_file_path_features}")
+        df_features.to_csv(csv_file_path_features, index=False)
+
+        print(f"Processed {photo_file} ({idx + 1} of {total_photos})")
+
+    print(f"{total_photos} photo(s) processed successfully.")
 
 
 def combine_csv_files(params: dict) -> None:
@@ -198,7 +174,7 @@ def combine_csv_files(params: dict) -> None:
     labeled_df = pd.concat(labeled_dfs, ignore_index=True)
 
     # Merge the labeled data into the final features dataframe
-    final_df = pd.merge(combined_df, labeled_df, on=['filename', 'video_frame'], how='left')
+    final_df = pd.merge(combined_df, labeled_df, on=['filename', 'frame_number'], how='left')
 
     # Print out the count of rows per unique label
     label_counts = final_df['label'].value_counts()
