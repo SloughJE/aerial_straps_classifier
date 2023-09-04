@@ -87,7 +87,9 @@ def train_rf(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, params
                                            min_samples_leaf=min_samples_leaf,
                                            max_features=max_features)
             
-            return -cross_val_score(model, X_train, y_train, cv=3, scoring='accuracy').mean()
+            score_metric = params.get('score_metric', 'accuracy')  # Defaulting to accuracy if score_metric isn't provided
+
+            return -cross_val_score(model, X_train, y_train, cv=5, scoring=score_metric).mean()
 
         study = optuna.create_study(direction='maximize')
         study.optimize(objective, n_trials=5)
@@ -137,12 +139,13 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, param
         }
         model = XGBClassifier(**param)
         
-        return -cross_val_score(model, X_train, y_train, cv=3).mean()
+        score_metric = params.get('score_metric', 'accuracy')  # Defaulting to accuracy if score_metric isn't provided
+        return -cross_val_score(model, X_train, y_train, cv=3, scoring=score_metric).mean()
 
     if optimize_hyperparams:
         print("Optimizing hyperparameters")
         study = optuna.create_study(direction='minimize')
-        study.optimize(objective, n_trials=2)
+        study.optimize(objective, n_trials=5)
         best_params = study.best_params
         print(f"Best hyperparameters found: {best_params}")
         model = XGBClassifier(**best_params)
