@@ -4,15 +4,16 @@ import json
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
+from typing import Tuple, Dict, Any
 
 import optuna
-from typing import Tuple, Dict, Any
+
+from sklearn.base import BaseEstimator
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.base import BaseEstimator
 from xgboost import XGBClassifier
 
 from .evaluation_metrics import (
@@ -21,7 +22,6 @@ from .evaluation_metrics import (
     generate_pr_curves_and_save,
     generate_feature_importance_visualization
 )
-
 
 # not implemented, need more data for this
 class FileNameBasedKFold:
@@ -87,7 +87,9 @@ def train_rf(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, params
                                            min_samples_leaf=min_samples_leaf,
                                            max_features=max_features)
             
-            return -cross_val_score(model, X_train, y_train, cv=3, scoring='accuracy').mean()
+            score_metric = params.get('score_metric', 'accuracy')  # Defaulting to accuracy if score_metric isn't provided
+
+            return -cross_val_score(model, X_train, y_train, cv=5, scoring=score_metric).mean()
 
         study = optuna.create_study(direction='maximize')
         study.optimize(objective, n_trials=5)
@@ -110,6 +112,16 @@ def train_rf(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, params
 
     return model
 
+def get_class_weights(le: LabelEncoder) -> dict:
+    # Get encoded label for 'other pose or transition'
+    encoded_other = le.transform(['other pose or transition'])[0]  # Assuming 'o' is the label for 'other pose or transition'
+    
+    # Create weight dict
+    # For example, setting the weight for 'other pose or transition' to 0.5 and 1.5 for others
+    weights = {label: 10 if label != encoded_other else 1 for label in range(len(le.classes_))}
+    
+    return weights
+
 
 def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, params: Dict[str, Any]) -> XGBClassifier:
     """
@@ -125,10 +137,13 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, param
     - model (XGBClassifier): The trained XGB model.
     """
     optimize_hyperparams = params.pop('optimize_hyperparams', False)
-    
+    weights = get_class_weights(params['label_encoder'])
+    print(f"using class weights: {weights}")
+    sample_weights = np.array([weights[label] for label in y_train])
+
     def objective(trial):
         param = {
-            'n_estimators': trial.suggest_int('n_estimators', 100, 1000),
+            'n_estimators': trial.suggest_int('n_estimators', 50, 1000),
             'max_depth': trial.suggest_int('max_depth', 1, 20),
             'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3),
             'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
@@ -137,12 +152,13 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, param
         }
         model = XGBClassifier(**param)
         
-        return -cross_val_score(model, X_train, y_train, cv=3).mean()
+        score_metric = params.get('score_metric', 'accuracy')  # Defaulting to accuracy if score_metric isn't provided
+        return -cross_val_score(model, X_train, y_train, cv=3, scoring=score_metric).mean()
 
     if optimize_hyperparams:
         print("Optimizing hyperparameters")
         study = optuna.create_study(direction='minimize')
-        study.optimize(objective, n_trials=2)
+        study.optimize(objective, n_trials=5)
         best_params = study.best_params
         print(f"Best hyperparameters found: {best_params}")
         model = XGBClassifier(**best_params)
@@ -158,7 +174,7 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, param
         model = XGBClassifier() # later can: XGBClassifier(**params)
     
     # Fit model on the entire dataset
-    model.fit(X_train, y_train)
+    model.fit(X_train, y_train, sample_weight=sample_weights)
 
     return model
 
@@ -253,9 +269,9 @@ def preprocess_data(train_df: DataFrame, test_df: DataFrame,
     - y_test (DataFrame): The testing target.
     - groups (DataFrame): The groups for the training data.
     """
-    X_train = train_df.drop(columns=[target_column, 'video_frame', 'filename'])
+    X_train = train_df.drop(columns=[target_column, 'frame_number', 'filename'])
     y_train = train_df[target_column]
-    X_test = test_df.drop(columns=[target_column, 'video_frame', 'filename'])
+    X_test = test_df.drop(columns=[target_column, 'frame_number', 'filename'])
     y_test = test_df[target_column]
     groups = train_df['filename']
     return X_train, y_train, X_test, y_test, groups

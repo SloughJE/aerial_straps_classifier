@@ -1,8 +1,14 @@
-video_processing:
-  input_video_dir: data/raw/original/
-  output_video_dir: data/interim/reduced/
-  reduction_factor: 4
-  mirror_videos: True
+media_processing:
+  video_processing:
+    input_video_dir: data/raw/original/
+    output_video_dir: data/interim/reduced/
+    reduction_factor: 4
+    mirror_videos: True
+
+  photo_processing:
+    input_photo_dir: data/raw/photos/
+    output_photo_dir: data/interim/photos/
+    mirror_photos: True
 
 labeling:
   labels:
@@ -15,26 +21,31 @@ labeling:
     f: front lever
   skip_seconds: 1
   input_video_dir: data/interim/reduced/
+  input_photo_dir: data/interim/photos/
   output_dir: data/interim/labeled/
 
 features:
   input_video_dir: data/interim/reduced/
   output_video_dir: data/processed/videos/
+  save_annotated_video: False
+  input_photo_dir: data/interim/photos/
+  output_photo_dir: data/processed/photos/
+  save_annotated_photo: False
   interim_features_directory: data/interim/features
   labeled_dir: data/interim/labeled
-  write_video: False
   final_features_directory: data/processed/features
 
 model_dev:
-  model_type: rf
+  model_type: xgb
   final_features_filepath: data/processed/features/final_features.csv
-  test_size: 0.3
+  test_size: 0.2
   target_column: label
   predictions_dir: data/results/
   optimize_hyperparams: True
+  score_metric: f1_macro  # You can set this to f1_micro, f1_weighted, 'recall', 'precision', 'roc_auc', etc. as needed (not f1 for multiclass)
 
 model_prod:
-  model_type: rf
+  model_type: xgb
   final_features_filepath: data/processed/features/final_features.csv
   target_column: label
   

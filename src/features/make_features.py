@@ -1,87 +1,28 @@
-import cv2
-import mediapipe as mp
 import os
+from typing import Tuple, Dict, Union
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+
+from .extract_landmarks import extract_landmarks
 
 
-def extract_landmarks(input_video, output_video, write_video=True):
 
-    cap = cv2.VideoCapture(input_video)
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    # Only create a VideoWriter if we intend to write the video
-    out = cv2.VideoWriter(output_video, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height)) if write_video else None
-
-    # Define the columns for the DataFrame
-    columns = ['video_frame']
-    for landmark in mp.solutions.pose.PoseLandmark:
-        columns.extend([
-            f'{landmark.name}_x',
-            f'{landmark.name}_y',
-            f'{landmark.name}_z',
-            f'{landmark.name}_visibility',
-            f'{landmark.name}_presence'
-        ])
-    df_landmarks = pd.DataFrame(columns=columns)
-
-    frame_count = 0
-    with mp.solutions.pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complexity=1) as pose:
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            # Convert the frame to RGB format.
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame_rgb.flags.writeable = False
-
-            # Detect the pose landmarks.
-            results = pose.process(frame_rgb)
-
-            # Create a blank frame to draw the landmarks on.
-            blank_frame = np.zeros_like(frame)
-
-            # Render the landmarks on the blank frame.
-            if results.pose_landmarks:
-                mp.solutions.drawing_utils.draw_landmarks(blank_frame, results.pose_landmarks, mp.solutions.pose.POSE_CONNECTIONS)
-
-                # Extract all landmarks
-                features = [frame_count]
-                for landmark in results.pose_landmarks.landmark:
-                    features.extend([landmark.x, landmark.y, landmark.z, landmark.visibility, landmark.presence])
-
-                # Append the features to the DataFrame
-                df_landmarks.loc[frame_count] = features
-
-            # Write the frame to the video file if write_video is True
-            if write_video:
-                out.write(blank_frame)
-            frame_count += 1
-
-    cap.release()
-    if write_video:
-        out.release()
-
-    # Compute additional features
-    df_landmarks['HEAD_x'] = (df_landmarks['LEFT_EAR_x'] + df_landmarks['RIGHT_EAR_x']) / 2
-    df_landmarks['HEAD_y'] = (df_landmarks['LEFT_EAR_y'] + df_landmarks['RIGHT_EAR_y']) / 2
-    df_landmarks['HEAD_z'] = (df_landmarks['LEFT_EAR_z'] + df_landmarks['RIGHT_EAR_z']) / 2
-
-    df_landmarks['NECK_x'] = (df_landmarks['LEFT_SHOULDER_x'] + df_landmarks['RIGHT_SHOULDER_x']) / 2
-    df_landmarks['NECK_y'] = (df_landmarks['LEFT_SHOULDER_y'] + df_landmarks['RIGHT_SHOULDER_y']) / 2
-    df_landmarks['NECK_z'] = (df_landmarks['LEFT_SHOULDER_z'] + df_landmarks['RIGHT_SHOULDER_z']) / 2
+def calculate_2d_angle(a: Tuple[float, float], 
+                       b: Tuple[float, float], 
+                       c: Tuple[float, float]) -> float:
+    """
+    Calculate the angle in 2D space between three points.
     
-    df_landmarks['video_frame'] = df_landmarks['video_frame'].astype(int)
-
-    return df_landmarks
-
-
-
-def calculate_2d_angle( a, b, c):
+    Args:
+    - a (Tuple[float, float]): Coordinate of the first point.
+    - b (Tuple[float, float]): Coordinate of the vertex or joint point.
+    - c (Tuple[float, float]): Coordinate of the third point.
+    
+    Returns:
+    - angle (float): The angle in degrees between the three points at point 'b'.
+    """
+    
     a = np.array([a[0], a[1]])
     b = np.array([b[0], b[1]])
     c = np.array([c[0], c[1]])
@@ -95,7 +36,24 @@ def calculate_2d_angle( a, b, c):
     return angle
 
 
-def extract_angles(row):
+
+def extract_angles(row: pd.Series) -> pd.Series:
+    """
+    Extract joint angles from the provided landmarks row.
+
+    This function takes a row from a dataframe containing 2D landmark coordinates 
+    and calculates various joint angles, such as elbow, shoulder, hip, knee, 
+    spine, and torso angles. It uses the `calculate_2d_angle` function to get 
+    these angles.
+
+    Parameters:
+    - row (pd.Series): A row from a dataframe containing 2D landmark coordinates.
+
+    Returns:
+    - pd.Series: A series containing joint angle names as the index and the 
+      corresponding calculated angles as values.
+    """
+    
     angles = {}
 
     # Define the landmarks for each angle
@@ -124,12 +82,33 @@ def extract_angles(row):
     return pd.Series(angles)
 
 
-def extract_landmarks_and_features(params: dict):
+def extract_landmarks_and_features_for_videos(params: Dict[str, Union[str, bool]]) -> None:
+    """
+    Extract landmarks and features from videos present in a given directory.
+
+    Given a set of parameters, this function reads videos from an input directory,
+    extracts landmarks and features from these videos, and saves the results to 
+    specified directories.
+
+    Parameters:
+    - params (dict): A dictionary containing the required parameters. Expected keys are:
+        * input_video_dir: The directory containing the input videos.
+        * output_video_dir: The directory where the annotated videos will be saved (if enabled).
+        * interim_features_directory: The directory where the extracted features will be saved.
+        * save_annotated_video: A boolean flag indicating if the annotated video should be saved.
+
+    Returns:
+    - None
+    """
 
     input_directory = params['input_video_dir']
     output_directory = params['output_video_dir']
     features_directory = params['interim_features_directory']
-    write_video = params['write_video']
+    write_video = params['save_annotated_video']
+    if write_video:
+        # Check if the directory exists, if not, create it
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
     # Get a list of all video files in the input directory
     video_files = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f)) and f.endswith(('.mp4', '.mov'))]
 
@@ -144,18 +123,19 @@ def extract_landmarks_and_features(params: dict):
         output_video = os.path.join(output_directory, video_file)
         print(f"Processing video: {input_video}")
 
-        df_landmarks = extract_landmarks(input_video, output_video, write_video)
+        df_landmarks = extract_landmarks(input_video, output_video, True, write_video)
         
-        video_name = os.path.splitext(os.path.basename(input_video))[0]
-        csv_file_path = os.path.join(features_directory, f'{video_name}_landmarks.csv')
+        video_name = os.path.basename(input_video)
+        modified_video_name = "video_" + video_name
+        csv_file_path = os.path.join(features_directory, f'{modified_video_name}_landmarks.csv')
         print(f"Landmarks extracted and saved to {csv_file_path}")
-        df_landmarks['filename'] = video_file
+        df_landmarks['filename'] = modified_video_name
         df_landmarks.to_csv(csv_file_path, index=False)
 
         df_features = df_landmarks.apply(extract_angles, axis=1)
-        df_features['filename'] = video_file
-        df_features['video_frame'] = df_landmarks['video_frame'] # Copying frame_number from df_landmarks to df_features
-        csv_file_path_features = os.path.join(features_directory, f'{video_name}_features.csv')
+        df_features['filename'] = modified_video_name
+        df_features['frame_number'] = df_landmarks['frame_number'] # Copying frame_number from df_landmarks to df_features
+        csv_file_path_features = os.path.join(features_directory, f'{modified_video_name}_features.csv')
         print(f"Features extracted and saved to {csv_file_path_features}")
         df_features.to_csv(csv_file_path_features, index=False)
 
@@ -164,43 +144,137 @@ def extract_landmarks_and_features(params: dict):
     print(f"{total_videos} video(s) processed successfully.")
 
 
-def combine_csv_files(params: dict) -> None:
+def extract_landmarks_and_features_for_photos(params: Dict[str, Union[str, bool]]) -> None:
     """
-    Combine CSV files in the given directory with filenames ending in '_features.csv' 
-    and merge with labeled data to create the final features dataframe.
+    Extract landmarks and features from photos present in a given directory.
 
-    Args:
-        params (dict): Dictionary containing the following key-value pairs:
-            - 'interim_features_directory': Directory containing interim feature CSV files.
-            - 'final_features_directory': Directory where the final features CSV will be saved.
-            - 'labeled_dir': Directory containing labeled CSV files.
+    Given a set of parameters, this function reads photos from an input directory,
+    extracts landmarks and features from these photos, and saves the results to 
+    specified directories.
+
+    Parameters:
+    - params (dict): A dictionary containing the required parameters. Expected keys are:
+        * input_photo_dir: The directory containing the input photos.
+        * output_photo_dir: The directory where the annotated photos will be saved (if enabled).
+        * interim_features_directory: The directory where the extracted features will be saved.
+        * save_annotated_photo: A boolean flag indicating if the annotated photo should be saved.
 
     Returns:
-        None
+    - None
     """
+
+    input_directory = params['input_photo_dir']
+    output_directory = params['output_photo_dir']
+    features_directory = params['interim_features_directory']
+    write_photo = params['save_annotated_photo']
+
+    photo_files = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f))\
+                        and f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+    if write_photo:
+        # Check if the directory exists, if not, create it
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+    
+    photos_to_process = [filename for filename in photo_files \
+                         if not os.path.exists(os.path.join(features_directory, os.path.splitext(filename)[0] + '_landmarks.csv'))]
+    total_photos = len(photos_to_process)
+    already_processed = len(photo_files) - total_photos
+    print(f"Total number of photos to process: {total_photos}.\nAlready processed {already_processed}.")
+
+    for idx, photo_file in enumerate(photos_to_process):
+        input_photo = os.path.join(input_directory, photo_file)
+        output_photo = os.path.join(output_directory, photo_file)
+        print(f"Processing photo: {input_photo}")
+
+        df_landmarks = extract_landmarks(input_photo, output_photo, False,  write_photo)
+
+        photo_name = os.path.basename(input_photo)
+        modified_photo_name = "photo_" + photo_name  
+        csv_file_path = os.path.join(features_directory, f'{modified_photo_name}_landmarks.csv')
+        print(f"Landmarks extracted and saved to {csv_file_path}")
+        df_landmarks['filename'] = modified_photo_name
+        df_landmarks.to_csv(csv_file_path, index=False)
+
+        df_features = df_landmarks.apply(extract_angles, axis=1)
+        df_features['filename'] = modified_photo_name
+        df_features['frame_number'] = df_landmarks['frame_number'] # Copying frame_number from df_landmarks to df_features
+        csv_file_path_features = os.path.join(features_directory, f'{modified_photo_name}_features.csv')
+        print(f"Features extracted and saved to {csv_file_path_features}")
+        df_features.to_csv(csv_file_path_features, index=False)
+
+        print(f"Processed {photo_file} ({idx + 1} of {total_photos})")
+
+    print(f"{total_photos} photo(s) processed successfully.")
+
+
+def combine_csv_files(params: Dict[str, str]) -> None:
+    """
+    Combine interim feature files and labeled files into a single CSV.
+
+    Given a set of parameters, this function reads interim features and labeled 
+    files from the respective directories, merges them based on filename and frame number,
+    and saves the combined result in the final features directory.
+
+    Parameters:
+    - params (dict): A dictionary containing the required parameters. Expected keys are:
+        * interim_features_directory: The directory containing the interim features files.
+        * final_features_directory: The directory where the final combined features will be saved.
+        * labeled_dir: The directory containing the labeled files.
+
+    Returns:
+    - None
+    """
+    
     interim_features_directory = params['interim_features_directory']
     final_features_directory = params['final_features_directory']
     labeled_dir = params['labeled_dir']
 
-    # Get list of all CSV files in the interim_features_directory with filenames ending in '_features.csv'
-    csv_files = [f for f in os.listdir(interim_features_directory) if f.endswith('_features.csv')]
-    print(f"Combining {len(csv_files)} interim feature files")
-    
-    # Create a list of dataframes by reading each CSV file
-    list_of_dfs = [pd.read_csv(os.path.join(interim_features_directory, f)) for f in csv_files]
+    if not os.path.exists(interim_features_directory) or not os.path.exists(labeled_dir):
+        print(f"Either the interim features directory or the labeled directory does not exist.")
+        return
 
-    # Concatenate all dataframes into a single dataframe
+    # Ensure output directory exists
+    if not os.path.exists(final_features_directory):
+        os.makedirs(final_features_directory)
+
+    csv_files = [f for f in os.listdir(interim_features_directory) if f.lower().endswith('_features.csv')]
+    print(f"Combining {len(csv_files)} interim feature files")
+
+    if not csv_files:
+        print("No interim feature files found.")
+        return
+
+    list_of_dfs = []
+    for file in csv_files:
+        try:
+            list_of_dfs.append(pd.read_csv(os.path.join(interim_features_directory, file)))
+        except Exception as e:
+            print(f"Error reading {file}: {e}")
+
     combined_df = pd.concat(list_of_dfs, ignore_index=True)
 
-    # Load all labeled CSV files
-    labeled_csv_files = [f for f in os.listdir(labeled_dir) if f.endswith('_labeled.csv')]
-    labeled_dfs = [pd.read_csv(os.path.join(labeled_dir, f)) for f in labeled_csv_files]
+    labeled_csv_files = [f for f in os.listdir(labeled_dir) if f.lower().endswith('_labeled.csv')]
+    labeled_dfs = []
+    for file in labeled_csv_files:
+        try:
+            labeled_dfs.append(pd.read_csv(os.path.join(labeled_dir, file)))
+        except Exception as e:
+            print(f"Error reading labeled file {file}: {e}")
+
+    if not labeled_dfs:
+        print("No labeled files found.")
+        return
+
     labeled_df = pd.concat(labeled_dfs, ignore_index=True)
+    final_df = pd.merge(combined_df, labeled_df, on=['filename', 'frame_number'], how='left')
 
-    # Merge the labeled data into the final features dataframe
-    final_df = pd.merge(combined_df, labeled_df, on=['filename', 'video_frame'], how='left')
+    if final_df['label'].isna().any():
+        missing_label_filenames = final_df.loc[final_df['label'].isna(), 'filename'].unique()
+        print("Some rows do not have matching labels. Consider checking your labeled data.")
+        print("Files with missing labels:")
+        for filename in missing_label_filenames:
+            print(filename)
 
-    # Print out the count of rows per unique label
     label_counts = final_df['label'].value_counts()
     print("\nNumber of rows per label:")
     for label, count in label_counts.items():

@@ -2,8 +2,8 @@ import sys
 import argparse
 import yaml
 from src.data.label import run_labeling, apply_mirror_labels
-from src.data.video_processing import process_videos
-from src.features.make_features import extract_landmarks_and_features, combine_csv_files
+from src.data.process_media import process_media
+from src.features.make_features import extract_landmarks_and_features_for_videos, extract_landmarks_and_features_for_photos, combine_csv_files
 from src.models.train_dev_model import train_model_pipeline
 from src.models.train_prod_model import train_prod_model
 
@@ -12,17 +12,31 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
+
     parser.add_argument(
-        "--process_videos",
-        help="reduce video quality for quicker labeling",
+        "--process_videos", 
+        action="store_true", 
+        help="Process videos (reduce size for quicker labeling, mirror videos)"
+    )
+    
+    parser.add_argument(
+        "--process_photos", 
+        action="store_true", 
+        help="Process photos (mirror photos)"
+    )
+ 
+    parser.add_argument(
+        "--label_videos",
+        help="label videos data",
         action="store_true"
     )
 
     parser.add_argument(
-        "--label_data",
-        help="label raw data",
+        "--label_photos",
+        help="label photos data",
         action="store_true"
     )
+
     parser.add_argument(
         "--apply_mirrored_label_data",
         help="label mirrored videos",
@@ -30,7 +44,13 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--make_features",
+        "--make_features_videos",
+        help="make features",
+        action="store_true"
+    )
+
+    parser.add_argument(
+        "--make_features_photos",
         help="make features",
         action="store_true"
     )
@@ -62,22 +82,37 @@ if __name__ == "__main__":
             params = yaml.safe_load(f)
 
         if args.process_videos:
-            process_videos(
-                params['video_processing']
-            )
+            process_media(
+                params['media_processing'], 'video'
+                ) 
 
-        if args.label_data:
+        if args.process_photos:
+            process_media(
+                params['media_processing'], 'photo'
+                )
+            
+        if args.label_videos:
             run_labeling(
-                params['labeling']
-            )
+                params['labeling'], 'video'
+                )
+
+        if args.label_photos:
+            run_labeling(
+                params['labeling'], 'photo'
+                )
         
         if args.apply_mirrored_label_data:
             apply_mirror_labels(
                 params['labeling']
             )
 
-        if args.make_features:
-            extract_landmarks_and_features(
+        if args.make_features_videos:
+            extract_landmarks_and_features_for_videos(
+                params['features']
+            )
+
+        if args.make_features_photos:
+            extract_landmarks_and_features_for_photos(
                 params['features']
             )
 
