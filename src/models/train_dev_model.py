@@ -4,15 +4,16 @@ import json
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
+from typing import Tuple, Dict, Any
 
 import optuna
-from typing import Tuple, Dict, Any
+
+from sklearn.base import BaseEstimator
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.base import BaseEstimator
 from xgboost import XGBClassifier
 
 from .evaluation_metrics import (
@@ -21,7 +22,6 @@ from .evaluation_metrics import (
     generate_pr_curves_and_save,
     generate_feature_importance_visualization
 )
-
 
 # not implemented, need more data for this
 class FileNameBasedKFold:

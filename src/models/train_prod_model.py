@@ -1,10 +1,12 @@
 import os
 import joblib
 import pandas as pd
-from xgboost import XGBClassifier
+from typing import Dict
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
-from typing import Dict
+from xgboost import XGBClassifier
+
 
 def train_prod_model(params: Dict[str, str]) -> None:
     """

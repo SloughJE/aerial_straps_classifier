@@ -1,11 +1,28 @@
 import os
+from typing import Tuple, Dict, Union
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from .extract_landmarks import extract_landmarks
 
-def calculate_2d_angle( a, b, c):
+
+
+def calculate_2d_angle(a: Tuple[float, float], 
+                       b: Tuple[float, float], 
+                       c: Tuple[float, float]) -> float:
+    """
+    Calculate the angle in 2D space between three points.
+    
+    Args:
+    - a (Tuple[float, float]): Coordinate of the first point.
+    - b (Tuple[float, float]): Coordinate of the vertex or joint point.
+    - c (Tuple[float, float]): Coordinate of the third point.
+    
+    Returns:
+    - angle (float): The angle in degrees between the three points at point 'b'.
+    """
+    
     a = np.array([a[0], a[1]])
     b = np.array([b[0], b[1]])
     c = np.array([c[0], c[1]])
@@ -19,7 +36,24 @@ def calculate_2d_angle( a, b, c):
     return angle
 
 
-def extract_angles(row):
+
+def extract_angles(row: pd.Series) -> pd.Series:
+    """
+    Extract joint angles from the provided landmarks row.
+
+    This function takes a row from a dataframe containing 2D landmark coordinates 
+    and calculates various joint angles, such as elbow, shoulder, hip, knee, 
+    spine, and torso angles. It uses the `calculate_2d_angle` function to get 
+    these angles.
+
+    Parameters:
+    - row (pd.Series): A row from a dataframe containing 2D landmark coordinates.
+
+    Returns:
+    - pd.Series: A series containing joint angle names as the index and the 
+      corresponding calculated angles as values.
+    """
+    
     angles = {}
 
     # Define the landmarks for each angle
@@ -48,7 +82,24 @@ def extract_angles(row):
     return pd.Series(angles)
 
 
-def extract_landmarks_and_features_for_videos(params: dict):
+def extract_landmarks_and_features_for_videos(params: Dict[str, Union[str, bool]]) -> None:
+    """
+    Extract landmarks and features from videos present in a given directory.
+
+    Given a set of parameters, this function reads videos from an input directory,
+    extracts landmarks and features from these videos, and saves the results to 
+    specified directories.
+
+    Parameters:
+    - params (dict): A dictionary containing the required parameters. Expected keys are:
+        * input_video_dir: The directory containing the input videos.
+        * output_video_dir: The directory where the annotated videos will be saved (if enabled).
+        * interim_features_directory: The directory where the extracted features will be saved.
+        * save_annotated_video: A boolean flag indicating if the annotated video should be saved.
+
+    Returns:
+    - None
+    """
 
     input_directory = params['input_video_dir']
     output_directory = params['output_video_dir']
@@ -93,7 +144,25 @@ def extract_landmarks_and_features_for_videos(params: dict):
     print(f"{total_videos} video(s) processed successfully.")
 
 
-def extract_landmarks_and_features_for_photos(params: dict):
+def extract_landmarks_and_features_for_photos(params: Dict[str, Union[str, bool]]) -> None:
+    """
+    Extract landmarks and features from photos present in a given directory.
+
+    Given a set of parameters, this function reads photos from an input directory,
+    extracts landmarks and features from these photos, and saves the results to 
+    specified directories.
+
+    Parameters:
+    - params (dict): A dictionary containing the required parameters. Expected keys are:
+        * input_photo_dir: The directory containing the input photos.
+        * output_photo_dir: The directory where the annotated photos will be saved (if enabled).
+        * interim_features_directory: The directory where the extracted features will be saved.
+        * save_annotated_photo: A boolean flag indicating if the annotated photo should be saved.
+
+    Returns:
+    - None
+    """
+
     input_directory = params['input_photo_dir']
     output_directory = params['output_photo_dir']
     features_directory = params['interim_features_directory']
@@ -138,8 +207,24 @@ def extract_landmarks_and_features_for_photos(params: dict):
     print(f"{total_photos} photo(s) processed successfully.")
 
 
-def combine_csv_files(params: dict) -> None:
+def combine_csv_files(params: Dict[str, str]) -> None:
+    """
+    Combine interim feature files and labeled files into a single CSV.
 
+    Given a set of parameters, this function reads interim features and labeled 
+    files from the respective directories, merges them based on filename and frame number,
+    and saves the combined result in the final features directory.
+
+    Parameters:
+    - params (dict): A dictionary containing the required parameters. Expected keys are:
+        * interim_features_directory: The directory containing the interim features files.
+        * final_features_directory: The directory where the final combined features will be saved.
+        * labeled_dir: The directory containing the labeled files.
+
+    Returns:
+    - None
+    """
+    
     interim_features_directory = params['interim_features_directory']
     final_features_directory = params['final_features_directory']
     labeled_dir = params['labeled_dir']
