@@ -1,25 +1,55 @@
-# Running the Pipelines
+# Aerial Straps Pose Classifier
 
-## Video Processing and Labeling
+Aerial straps, an entrancing and demanding discipline of aerial arts, involves performers executing a variety of acrobatic maneuvers while suspended from a pair of straps. The subtleties of each pose and transition, combined with the rapid motion, make automated pose detection a challenging endeavor.
 
-### Overview
+This project introduces an intelligent solution that harnesses the power of machine learning to accurately classify various aerial straps poses from photos and videos. With the rapid advancements in computer vision, we've engineered a comprehensive pipeline to process, label, and train models that can recognize and categorize key poses used in aerial straps routines.
 
-This code provides functionalities to reduce the quality of videos for quicker labeling and to label frames of videos. The functionalities include:
+## Project Highlights:
 
-### 1. **Reduce Video Quality**
-Reduces the quality of videos in a given directory to speed up labeling, specifically it reduces the lag from the time a key is pressed until the video skips to the next frame. Already processed videos will be skipped. Videos are named the same as the originals but are placed in this different directory to distinguish them.
+- **Data Processing**: Process and prepare media, including videos and photos, to create a streamlined dataset.
+- **Data Labeling**: Distinguish between intricate poses like the 'meathook', 'nutcracker', and 'l-hang', among others.
+- **Feature Extraction**: Extract critical pose landmarks and angles to capture the intricacies of each pose.
+- **Model Training**: Train robust machine learning models, evaluate their performance, and refine them for real-world applications.
+
+# Project Details
+
+## 1. Media Processing
+
+### 1.1 Video Processing
+To streamline the labeling process, the pipeline provides functionalities to reduce the size of the videos. This ensures quicker loading and processing during the labeling stage. Additionally, the script can produce mirrored versions of the videos which can be particularly beneficial in scenarios where data augmentation is required. Already processed videos will be skipped. Videos are named the same as the originals but are placed in this different directory to distinguish them.
+
 - **Reduction Factor**: An integer that specifies the factor by which the dimensions of the videos will be reduced. For example, a reduction factor of 4 would reduce both the width and height of the video to 1/4th of their original size.
 
-### 2. **Video Frame Labeling**
-The `label_frames` and `run_labeling` functions are responsible for allowing the user to label frames of videos. Here's how it operates:
+## 1.2 Photo Processing
+Similar to videos, the pipeline also offers a tool for preparing photos for labeling. This involves creating mirrored versions of the images. Mirroring photos can be useful for expanding the dataset and ensuring model robustness.
 
-- **Labels Mapping**: The labels that can be applied to frames are configured in the `params.yaml` file. This mapping connects a keypress to a specific label. For example, pressing 'm' will label a frame as 'meathook.'
-- **Skip Frames**: A configurable number of frames to skip between labeled frames. The same label is applied to skipped frames, which allows labeling of video segments rather than individual frames.
-- **Input Video Directory**: The directory containing the videos that need to be labeled. This could be the original videos or the reduced-quality videos.
-- **Output Directory**: The directory where the labeled data will be saved. A separate CSV file is output for each video file, named the same as the video. For example, if the video is named "example.mov", the CSV file will be named "example.csv".
+## 2. Labeling
 
-**Summary**:
-The `label_frames` function allows the user to manually label frames from a specified video file. The user is presented with a frame every `skip_seconds` (calculated by number of seconds to skip and frame rate of video) and assigns a label to it. This label is then applied to all frames from the previously labeled frame up to and including the current frame. At the end of the video, the user labels the final frame, and this label is applied to all remaining frames. This table respresents the approach.
+### 2.1 Video Labeling
+In this process, each frame of a video is assigned a corresponding label.
+
+#### Steps:
+1. **Displaying the Video Frame**:
+   - The video frame will be displayed for inspection based on the `skip_seconds` value (in this case, every second). 
+   - This assists users in deciding the most appropriate label for the current frame.
+  
+2. **Key Press Mapping**:
+   - Based on the `params.yaml`, we have the following labels and their associated keys:
+     - `m`: **meathook**
+     - `n`: **nutcracker**
+     - `l`: **l-hang**
+     - `o`: **other pose or transition**
+     - `r`: **reverse meathook**
+     - `b`: **back lever**
+     - `f`: **front lever**
+   - The user is prompted to press the respective key to label the frame. Pressing an unassociated key will result in a reminder of the valid key mappings.
+
+3. **Progress Saving**: 
+   - The labeled data is saved in CSV format. 
+   - Each row contains the frame number, filename (with "video_" as prefix), and the assigned label.
+
+### **Video Frame Labeling Method Summary**:
+The `label_videos` method allows the user to manually label frames from specified videos within a directory. The user is presented with a frame every `skip_seconds` (calculated by number of seconds to skip and frame rate of video) and assigns a label to it. This label is then applied to all frames from the previously labeled frame up to and including the current frame. At the end of the video, the user labels the final frame, and this label is applied to all remaining frames. This table respresents the approach.
 
 **Table**:
 
@@ -37,42 +67,63 @@ In this example, there are 22 frames in total, and `skip_frames` is set to 5. Th
 
 These functions make it efficient to label video data for machine learning tasks or other analyses, especially when the videos contain continuous segments with the same characteristics.
 
-> **Important Note**: It is recommended to run this part of the code outside of the integrated terminal, such as in the Mac Terminal. Running video playback and labeling within an integrated terminal like the one in VSCode may lead to issues. You may also need to install some additional packages to support video playback in your terminal environment.
 
-### Configuration
+### 2.2 Photo Labeling
 
-You can configure the video processing and labeling process through the `params.yaml` file. The key-value pairs include directories for input and output videos, reduction factor for video size, labels mapping, and number of frames to skip during labeling.
+#### Steps:
+1. **Displaying the Photo**: 
+   - Each photo is displayed for inspection.
 
-#### Example `params.yaml`
+2. **Key Press Mapping**:
+   - Same as the video labeling, you'll use the keys mentioned above to label the photos.
 
-```yaml
-video_processing:
-  input_video_dir: data/raw/original/
-  output_video_dir: data/raw/reduced/
-  reduction_factor: 4
+3. **Progress Saving**: 
+   - The labeled data is saved in CSV format.
+   - Each row contains the photo filename (with "photo_" as prefix) and the assigned label.
 
-labeling:
-  labels:
-    m: meathook
-    n: nutcracker
-    l: l hang
-    o: other_pose
-    r: reverse meathook
-    b: back lever
-  skip_frames: 60
-  input_video_dir: data/raw/reduced/
-  output_dir: data/interim/
-```
 
-## Make Features
+> **Important Note**: It is recommended to run the Labeling part of the code outside of the VS Code integrated terminal, such as in the Mac Terminal. Running video playback and labeling within an integrated terminal like the one in VS Code may lead to issues. You may also need to install some additional packages to support video playback in your terminal environment.
+
+## 3. Mirrored Media Labeling
+
+### Overview:
+Once videos and photos are labeled, it's essential to ensure that their mirrored versions also have appropriate labels.
+
+### Steps:
+1. **Identifying Mirrored Files**: 
+   - The code identifies files in the specified directories that have a "mirrored_" prefix. 
+   - It then matches these mirrored files to their original counterparts.
+
+2. **Label Application**: 
+   - For every mirrored video or photo, labels from the original file are applied.
+   - The filenames in the CSV output for these mirrored files will contain the "mirrored_" prefix to distinguish them from their original counterparts.
+
+3. **Saving Mirrored Labels**: 
+   - The mirrored labels are saved in CSV format in the specified output directory.
+
+### Note: 
+This step is automated and doesn't require manual labeling. It merely applies existing labels to mirrored versions.
+
+
+## 4. Features
 
 ### Overview
 
-This code provides functionality to extract pose landmarks and angles from video frames and save them as intermediate features for further analysis and model training.
+This code extracts pivotal pose landmarks and angles from video frames and photos, optimizing for aerial straps performance analysis.
 
-### Joint Angle Features
+### Pose Landmark Extraction
 
-Joint angle features provide insights into the positions and relationships of body parts in videos. These angles can be useful for understanding movement patterns and poses in the videos. Some of the extracted joint angle features include:
+Utilize [MediaPipe's Pose Landmarker](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker) to derive critical pose landmarks. Not all landmarks are considered; we focus on those pertinent to aerial straps, disregarding ones like the mouth landmark.
+
+#### How MediaPipe Pose Landmarker Works:
+
+MediaPipe's Pose Landmarker detects key body landmarks using a trained machine learning model. The landmarks represent anatomical points, providing a simplified yet robust skeleton of a person in 2D space.
+
+### Joint Angle Features Calculation with Landmarks
+
+Angles between joints or body segments are invaluable for aerial straps posture analysis. The code calculates the angle formed at a vertex between two other points in 2D space. We use the landmark data to derive specific joint angles vital for identifying poses, such as elbow, shoulder, hip, and knee angles.
+
+Some of the extracted joint angle features include:
 
 - **Elbow Angle**: The angle formed between the shoulder, elbow, and wrist joints.
 - **Shoulder Angle**: The angle formed between the elbow, shoulder, and hip joints.
@@ -81,106 +132,108 @@ Joint angle features provide insights into the positions and relationships of bo
 - **Spine Angle**: The angle formed between the left hip, right hip, and head landmarks.
 - **Torso Angle**: The angle formed between the left hip, right hip, and neck landmarks.
 
-These joint angles provide insights into the body's orientation and can be valuable features for training machine learning models to classify and analyze video data.
+These joint angles provide insights into the body's orientation and can be valuable features for training machine learning models to classify and analyze image data.
 
-### 1. **Extract Pose Landmarks and Features**
+### 1. **Extract Pose Landmarks and Features from Videos**
 
-The `extract_landmarks_and_features` function extracts pose landmarks and calculates various angles from the video frames. Here's how it operates:
+Use the `extract_landmarks_and_features_for_videos` function to obtain the required data from video frames:
 
-- **Input Videos**: The videos from which pose landmarks need to be extracted. These videos can be the original ones or the ones with reduced quality.
-- **Output Landmarks and Features**: The extracted landmarks and calculated angles are saved as CSV files for each video. The files are named as `{video_name}_landmarks.csv` and `{video_name}_features.csv`.
+- **Input**: Accepts both original or quality-reduced videos.
+- **Output**: Produces two distinct CSV files for every video: `{video_name}_landmarks.csv` and `{video_name}_features.csv`.
 
-The process goes as follows:
+**Procedure**:
+1. Break down the video into individual frames and employ the Mediapipe library to extract pose landmarks.
+2. Compute the relevant angles derived from the extracted pose landmarks.
+3. Record the landmarks and angles into separate CSV files, indexed with the video frame number.
 
-1. For each video, the function processes each frame to extract pose landmarks using the Mediapipe library.
-2. The pose landmarks are used to calculate angles between different body parts, which are important features for analysis.
-3. The extracted landmarks and angles are saved in CSV files along with the corresponding video frame number.
+### 2. **Extract Pose Landmarks and Features from Photos**
 
-### 2. Combine Features from all CSV Files
-The `combine_csv_files` function combines CSV files in the given directory, specifically files with names ending in `_features.csv`. The merged data is then merged with labeled data to create the final feature dataset for model training.
+For the analysis of static poses from photos, leverage the `extract_landmarks_and_features_for_photos` function:
+
+- **Input**: Takes in high-resolution or down-scaled photos.
+- **Output**: Outputs two CSV files for every photo: `{photo_name}_landmarks.csv` and `{photo_name}_features.csv`.
+
+**Steps**:
+1. Process each photo using landmark extraction tools, including the Mediapipe framework.
+2. Determine joint angles based on the landmarks obtained.
+3. Catalog the landmarks and angles in dedicated CSV files, each labeled with the respective photo's name.
 
 
-### Configuration
-The `params.yaml` file contains key-value pairs that configure the process of extracting pose landmarks and features from videos. These parameters control the input and output directories, settings for video processing, and paths to save the extracted features. 
+## 5. Combine Features from all CSV Files
 
-```yaml
-features:
-  input_video_dir: data/interim/reduced/
-  output_video_dir: data/processed/videos/
-  interim_features_directory: data/interim/features
-  labeled_dir: data/interim/labeled
-  write_video: False
-  final_features_directory: data/processed/features
-```
+The `combine_csv_files` function consolidates interim feature files with labeled files into a singular CSV. This utility ensures that the extracted features from videos/photos and their corresponding labels are combined in a structured manner, ready for subsequent analysis or model training.
 
-## Model Training and Evaluation
+### Functionality
+The function reads interim features and labeled files from specified directories and merges them based on the filename and frame number. The merged result, which contains both features and labels, is saved in the final features directory. If any row in the merged DataFrame lacks a matching label, a warning is printed to notify the user with the concerning file. The final DataFrame, which comprises features combined with labels, is saved to the `final_features_directory` with the filename `final_features.csv`.
+
+Ensure the labeled data is consistent and matches the filenames and frame numbers in the features data. Any inconsistency may result in missing labels for some entries.
+
+## 6. Model Training and Evaluation
 
 ### Overview
 
-This code provides functionalities for training, evaluating, and saving machine learning models for video analysis tasks. The main components include:
+This code provides functionalities for training, evaluating, and saving machine learning models for the image analysis task. The main components include:
 
-### 1. **Model Training and Saving**
-The `train_prod_model` function trains a machine learning model (e.g., XGBoost or RandomForest) on the entire dataset and saves it along with the label encoder.
-
-- **Input Data**: The final feature matrix and labels read from a CSV file.
-- **Model Type**: The type of model to be trained (specified in the `params` dictionary).
-- **Output**: The trained model and label encoder are saved in appropriate directories.
+### 1. **Model Training Pipeline**
+The `train_dev_model` function manages the process of splitting data, encoding labels, training the classifier, and saving the trained model.
 
 ### 2. **Generating Evaluation Metrics**
 Functions such as `generate_roc_curves_and_save`, `generate_pr_curves_and_save`, `generate_visualizations_and_save_metrics`, and `generate_feature_importance_visualization` are used to generate evaluation metrics and visualizations for the trained models.
 
-### 3. **Model Training Pipeline**
-The `train_model_pipeline` function manages the process of splitting data, encoding labels, training the classifier, and saving the trained model.
+## 7. Model Training: Production
 
-- **Parameters**: Configurable parameters include the file paths, model type, test size, model-specific parameters, and directory paths.
+### Overview
 
-### Configuration
+The `train_prod_model` method trains a machine learning model (e.g., XGBoost or RandomForest) on the entire dataset and saves it along with the label encoder.
 
-You can configure the model training and evaluation process through the `params.yaml` file. The key-value pairs include file paths, model type, test size, and model-specific parameters.
 
-#### Example `params.yaml`
+# Usage Sequence
 
-```yaml
-model_dev:
-  model_type: xgb
-  final_features_filepath: data/processed/features/final_features.csv
-  test_size: 0.3
-  target_column: label
-  predictions_dir: data/results/
-  optimize_hyperparams: True
-
-model_prod:
-  model_type: xgb
-  final_features_filepath: data/processed/features/final_features.csv
-  target_column: label
+### 1. Media Processing
+#### 1.1 Process Videos
+```bash
+python run_pipelines.py --process_videos
 ```
-
-
-## Usage
-
-### 1. Reduce Video Quality
+#### 1.2 Process Photos
+```bash
+python run_pipelines.py --process_photos
+```
+### 2. Labeling
+#### 2.1 Label Videos
 
 ```bash
-python run_pipelines.py --reduce_quality
+python run_pipelines.py --label_videos
 ```
-### 2. Label Video Data
-
+#### 2.2 Label Photos
 ```bash
-python run_pipelines.py --label_data 
+python run_pipelines.py --label_photos
 ```
-### 3. Make Features
+
+### 3. Mirrored Media Labeling
+```bash
+python run_pipelines.py --apply_mirror_labels
 ```
-python run_pipelines.py --label_data
+### 4. Features
+#### 4.1 Make Features from Videos
+```bash
+python run_pipelines.py --make_features_videos
 ```
-### 4. Combine Feature CSVs
+#### 4.2 Make Features from Photos
+```bash
+python run_pipelines.py --make_features_photos
+```
+
+### 5. Combine Feature CSVs
 ```bash
 python run_pipelines.py --combine_feature_csv
 ```
-### 5. Train Development Model
+
+### 6. Train Development Model
 ```bash
 python run_pipelines.py --train_dev_model
 ```
-### 6. Train Production Model
+
+### 7. Train Production Model
 ```bash
 python run_pipelines.py --train_prod_model
 ```
@@ -224,8 +277,3 @@ python run_pipelines.py --train_prod_model
 │
 └──params.yml          <- parameters 
 ```
-
-Notes:
-Some models had to be manually downloaded. So I download to models/
-and the cp to the correct place (based on the download errors)
-cp models/pose_landmark_heavy.tflite /usr/local/lib/python3.8/site-packages/mediapipe/modules/pose_landmark
