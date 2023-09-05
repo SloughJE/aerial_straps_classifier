@@ -1,5 +1,4 @@
 import os
-import cv2
 import shutil
 
 from .video_processing import reduce_video_size, mirror_video
