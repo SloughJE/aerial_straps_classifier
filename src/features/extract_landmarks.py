@@ -1,4 +1,5 @@
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Union
+import os
 
 import cv2
 import mediapipe as mp
@@ -61,6 +62,13 @@ def calculate_additional_features(df: pd.DataFrame) -> pd.DataFrame:
     df['NECK_x'] = (df['LEFT_SHOULDER_x'] + df['RIGHT_SHOULDER_x']) / 2
     df['NECK_y'] = (df['LEFT_SHOULDER_y'] + df['RIGHT_SHOULDER_y']) / 2
     df['NECK_z'] = (df['LEFT_SHOULDER_z'] + df['RIGHT_SHOULDER_z']) / 2
+
+    # Calculate average position for shoulders, hips, knees, etc. to be used in spatial features
+    df['avg_shoulder_y'] = (df['LEFT_SHOULDER_y'] + df['RIGHT_SHOULDER_y']) / 2
+    df['avg_hip_y'] = (df['LEFT_HIP_y'] + df['RIGHT_HIP_y']) / 2
+    df['avg_knee_y'] = (df['LEFT_KNEE_y'] + df['RIGHT_KNEE_y']) / 2
+    df['avg_elbow_y'] = (df['LEFT_ELBOW_y'] + df['RIGHT_ELBOW_y']) / 2
+    df['avg_ankle_y'] = (df['LEFT_ANKLE_y'] + df['RIGHT_ANKLE_y']) / 2
 
     return df
 
@@ -139,3 +147,81 @@ def extract_landmarks(input_source: str,
 
     return df_landmarks
 
+def extract_landmarks_for_videos(params: Dict[str, Union[str, bool]]) -> None:
+    input_directory = params['input_video_dir']
+    output_directory = params['output_video_dir']
+    landmarks_directory = params['interim_landmarks_directory']
+    write_video = params['save_annotated_video']
+    
+    if write_video:
+        # Check if the directory exists, if not, create it
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+    if not os.path.exists(landmarks_directory):
+        os.makedirs(landmarks_directory)
+
+    # Get a list of all video files in the input directory
+    video_files = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f)) and f.endswith(('.mp4', '.mov'))]
+
+    # Filter out videos that have already been processed
+    videos_to_process = [filename for filename in video_files if not os.path.exists(os.path.join(landmarks_directory, os.path.splitext(filename)[0] + '_landmarks.csv'))]
+    total_videos = len(videos_to_process)
+    already_processed = len(video_files) - total_videos
+    print(f"Total number of videos to process: {total_videos}.\nAlready processed {already_processed}.")
+
+    for video_file in videos_to_process:
+        input_video = os.path.join(input_directory, video_file)
+        output_video = os.path.join(output_directory, video_file)
+        print(f"Processing video: {input_video}")
+
+        df_landmarks = extract_landmarks(input_video, output_video, True, write_video)
+        
+        video_name = os.path.basename(input_video)
+        modified_video_name = "video_" + video_name
+        csv_file_path = os.path.join(landmarks_directory, f'{modified_video_name}_landmarks.csv')
+        print(f"Landmarks extracted and saved to {csv_file_path}")
+        df_landmarks['filename'] = modified_video_name
+        df_landmarks.to_csv(csv_file_path, index=False)
+
+    print(f"{total_videos} video(s) processed successfully.")
+
+
+def extract_landmarks_for_photos(params: Dict[str, Union[str, bool]]) -> None:
+    """
+    Extract landmarks from photos present in a given directory.
+    """
+    input_directory = params['input_photo_dir']
+    output_directory = params['output_photo_dir']
+    landmarks_directory = params['interim_landmarks_directory']
+    write_photo = params['save_annotated_photo']
+
+    photo_files = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f))\
+                        and f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+    if write_photo:
+        # Check if the directory exists, if not, create it
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+    
+    if not os.path.exists(landmarks_directory):
+        os.makedirs(landmarks_directory)
+
+    photos_to_process = [filename for filename in photo_files \
+                         if not os.path.exists(os.path.join(landmarks_directory, os.path.splitext(filename)[0] + '_landmarks.csv'))]
+    total_photos = len(photos_to_process)
+    already_processed = len(photo_files) - total_photos
+    print(f"Total number of photos to process: {total_photos}.\nAlready processed {already_processed}.")
+
+    for photo_file in photos_to_process:
+        input_photo = os.path.join(input_directory, photo_file)
+        output_photo = os.path.join(output_directory, photo_file)
+
+        df_landmarks = extract_landmarks(input_photo, output_photo, False,  write_photo)
+
+        photo_name = os.path.basename(input_photo)
+        modified_photo_name = "photo_" + photo_name  
+        csv_file_path = os.path.join(landmarks_directory, f'{modified_photo_name}_landmarks.csv')
+        
+        df_landmarks['filename'] = modified_photo_name
+        df_landmarks.to_csv(csv_file_path, index=False)
+
+    print(f"{total_photos} photo(s) processed successfully.")

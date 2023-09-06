@@ -82,129 +82,110 @@ def extract_angles(row: pd.Series) -> pd.Series:
     return pd.Series(angles)
 
 
-def extract_landmarks_and_features_for_videos(params: Dict[str, Union[str, bool]]) -> None:
+def extract_spatial_features(df_landmarks: pd.DataFrame) -> pd.DataFrame:
     """
-    Extract landmarks and features from videos present in a given directory.
-
-    Given a set of parameters, this function reads videos from an input directory,
-    extracts landmarks and features from these videos, and saves the results to 
-    specified directories.
-
-    Parameters:
-    - params (dict): A dictionary containing the required parameters. Expected keys are:
-        * input_video_dir: The directory containing the input videos.
-        * output_video_dir: The directory where the annotated videos will be saved (if enabled).
-        * interim_features_directory: The directory where the extracted features will be saved.
-        * save_annotated_video: A boolean flag indicating if the annotated video should be saved.
-
-    Returns:
-    - None
-    """
-
-    input_directory = params['input_video_dir']
-    output_directory = params['output_video_dir']
-    features_directory = params['interim_features_directory']
-    write_video = params['save_annotated_video']
-    if write_video:
-        # Check if the directory exists, if not, create it
-        if not os.path.exists(output_directory):
-            os.makedirs(output_directory)
-    # Get a list of all video files in the input directory
-    video_files = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f)) and f.endswith(('.mp4', '.mov'))]
-
-    # Filter out videos that have already been processed
-    videos_to_process = [filename for filename in video_files if not os.path.exists(os.path.join(features_directory, os.path.splitext(filename)[0] + '_landmarks.csv'))]
-    total_videos = len(videos_to_process)
-    already_processed = len(video_files) - total_videos
-    print(f"Total number of videos to process: {total_videos}.\nAlready processed {already_processed}.")
-
-    for idx, video_file in enumerate(videos_to_process):
-        input_video = os.path.join(input_directory, video_file)
-        output_video = os.path.join(output_directory, video_file)
-        print(f"Processing video: {input_video}")
-
-        df_landmarks = extract_landmarks(input_video, output_video, True, write_video)
-        
-        video_name = os.path.basename(input_video)
-        modified_video_name = "video_" + video_name
-        csv_file_path = os.path.join(features_directory, f'{modified_video_name}_landmarks.csv')
-        print(f"Landmarks extracted and saved to {csv_file_path}")
-        df_landmarks['filename'] = modified_video_name
-        df_landmarks.to_csv(csv_file_path, index=False)
-
-        df_features = df_landmarks.apply(extract_angles, axis=1)
-        df_features['filename'] = modified_video_name
-        df_features['frame_number'] = df_landmarks['frame_number'] # Copying frame_number from df_landmarks to df_features
-        csv_file_path_features = os.path.join(features_directory, f'{modified_video_name}_features.csv')
-        print(f"Features extracted and saved to {csv_file_path_features}")
-        df_features.to_csv(csv_file_path_features, index=False)
-
-        print(f"Processed {video_file} ({idx + 1} of {total_videos})")
-
-    print(f"{total_videos} video(s) processed successfully.")
-
-
-def extract_landmarks_and_features_for_photos(params: Dict[str, Union[str, bool]]) -> None:
-    """
-    Extract landmarks and features from photos present in a given directory.
-
-    Given a set of parameters, this function reads photos from an input directory,
-    extracts landmarks and features from these photos, and saves the results to 
-    specified directories.
-
-    Parameters:
-    - params (dict): A dictionary containing the required parameters. Expected keys are:
-        * input_photo_dir: The directory containing the input photos.
-        * output_photo_dir: The directory where the annotated photos will be saved (if enabled).
-        * interim_features_directory: The directory where the extracted features will be saved.
-        * save_annotated_photo: A boolean flag indicating if the annotated photo should be saved.
-
-    Returns:
-    - None
-    """
-
-    input_directory = params['input_photo_dir']
-    output_directory = params['output_photo_dir']
-    features_directory = params['interim_features_directory']
-    write_photo = params['save_annotated_photo']
-
-    photo_files = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f))\
-                        and f.lower().endswith(('.jpg', '.jpeg', '.png'))]
-    if write_photo:
-        # Check if the directory exists, if not, create it
-        if not os.path.exists(output_directory):
-            os.makedirs(output_directory)
+    Extract spatial features from the provided landmarks dataframe.
     
-    photos_to_process = [filename for filename in photo_files \
-                         if not os.path.exists(os.path.join(features_directory, os.path.splitext(filename)[0] + '_landmarks.csv'))]
-    total_photos = len(photos_to_process)
-    already_processed = len(photo_files) - total_photos
-    print(f"Total number of photos to process: {total_photos}.\nAlready processed {already_processed}.")
+    The function calculates relative positions such as hip_to_shoulder, knee_to_hip, etc.
+    using a defined margin of error for labeling positions as 'level'.
+    
+    Parameters:
+    - df_landmarks (pd.DataFrame): DataFrame containing landmark data.
+    
+    Returns:
+    - pd.DataFrame: DataFrame containing the extracted spatial features.
+    """
+    
+    margin_error = 0.08
+    prefix = "spatial_"
+    
+    def relative_position(y1: float, y2: float) -> str:
+        """
+        Calculate the relative position of y1 with respect to y2.
+        
+        Parameters:
+        - y1 (float): The y-coordinate of the first landmark.
+        - y2 (float): The y-coordinate of the second landmark.
+        
+        Returns:
+        - str: 'above', 'below', or 'level' indicating y1's position relative to y2.
+        """
+        below = y1 > y2 + margin_error
+        above = y1 < y2 - margin_error
+        return np.where(below, 'below', np.where(above, 'above', 'level'))
 
-    for idx, photo_file in enumerate(photos_to_process):
-        input_photo = os.path.join(input_directory, photo_file)
-        output_photo = os.path.join(output_directory, photo_file)
-        print(f"Processing photo: {input_photo}")
+    # Lists of landmarks to simplify the creation of the columns
+    relations = [('KNEE', 'HIP'), ('KNEE', 'SHOULDER'), ('ELBOW', 'HIP'), 
+                 ('KNEE', 'ANKLE'), ('ELBOW', 'SHOULDER'), ('WRIST', 'ELBOW'), 
+                 ('WRIST', 'SHOULDER'), ('WRIST', 'HIP'), ('WRIST', 'KNEE'), 
+                 ('WRIST', 'ANKLE')]
+    
+    sides = ['LEFT', 'RIGHT']
+    
+    for side in sides:
+        for rel1, rel2 in relations:
+            y1 = df_landmarks[f'{side}_{rel1}_y'] if rel1 != 'HEAD' else df_landmarks['HEAD_y']
+            y2 = df_landmarks[f'{side}_{rel2}_y'] if rel2 != 'HEAD' else df_landmarks['HEAD_y']
+            column_name = f'{prefix}{side.lower()}_{rel1.lower()}_to_{rel2.lower()}'
+            df_landmarks[column_name] = relative_position(y1, y2)
 
-        df_landmarks = extract_landmarks(input_photo, output_photo, False,  write_photo)
+    # Calculate relative positions, may add some later
+    #df_landmarks['hip_to_shoulder'] = relative_position(df_landmarks['avg_hip_y'], df_landmarks['avg_shoulder_y'])
+    #df_landmarks['knee_to_hip'] = relative_position(df_landmarks['avg_knee_y'], df_landmarks['avg_hip_y'])
+    #df_landmarks['knee_to_shoulder'] = relative_position(df_landmarks['avg_knee_y'], df_landmarks['avg_shoulder_y'])
+    #df_landmarks['head_to_shoulder'] = relative_position(df_landmarks['HEAD_y'], df_landmarks['avg_shoulder_y'])
+    #df_landmarks['elbow_to_hip'] = relative_position(df_landmarks['avg_elbow_y'], df_landmarks['avg_hip_y'])
+    #df_landmarks['knee_to_ankle'] = relative_position(df_landmarks['avg_knee_y'], df_landmarks['avg_ankle_y'])
 
-        photo_name = os.path.basename(input_photo)
-        modified_photo_name = "photo_" + photo_name  
-        csv_file_path = os.path.join(features_directory, f'{modified_photo_name}_landmarks.csv')
-        print(f"Landmarks extracted and saved to {csv_file_path}")
-        df_landmarks['filename'] = modified_photo_name
-        df_landmarks.to_csv(csv_file_path, index=False)
+#    Add the general hip_to_shoulder and head_to_shoulder with the prefix
+    df_landmarks[f'{prefix}hip_to_shoulder'] = relative_position(df_landmarks['avg_hip_y'], df_landmarks['avg_shoulder_y'])
+    df_landmarks[f'{prefix}head_to_shoulder'] = relative_position(df_landmarks['HEAD_y'], df_landmarks['avg_shoulder_y'])
 
-        df_features = df_landmarks.apply(extract_angles, axis=1)
-        df_features['filename'] = modified_photo_name
-        df_features['frame_number'] = df_landmarks['frame_number'] # Copying frame_number from df_landmarks to df_features
-        csv_file_path_features = os.path.join(features_directory, f'{modified_photo_name}_features.csv')
+    # Build a list of the new columns to return
+    columns = [f'{prefix}{side.lower()}_{rel1.lower()}_to_{rel2.lower()}' for side in sides for rel1, rel2 in relations]
+    columns += [f'{prefix}hip_to_shoulder', f'{prefix}head_to_shoulder']
+
+    return df_landmarks[columns]
+
+
+def extract_features_from_landmarks(params: Dict[str, Union[str, bool]]) -> None:
+    """
+    Extract spatial and angle features from landmark CSV files and save to new CSV files.
+
+    This function processes a list of CSV files from the provided directory containing landmarks, 
+    extracts spatial and angle features, and then saves these features to new CSV files 
+    in the specified features directory.
+
+    Parameters:
+    - params (Dict[str, Union[str, bool]]): A dictionary containing:
+        'interim_landmarks_directory': The path to the directory containing landmark CSV files.
+        'interim_features_directory': The path to the directory where feature CSV files will be saved.
+    """
+
+    landmarks_directory = params['interim_landmarks_directory']
+    features_directory = params['interim_features_directory']
+
+    # Get a list of all landmark CSV files in the directory
+    csv_files = [f for f in os.listdir(landmarks_directory) if f.endswith('_landmarks.csv')]
+
+    for csv_file in csv_files:
+        df_landmarks = pd.read_csv(os.path.join(landmarks_directory, csv_file))
+
+        # Extract spatial features
+        df_spatial = extract_spatial_features(df_landmarks)
+
+        # Extract angles features
+        df_angles = df_landmarks.apply(extract_angles, axis=1)
+
+        # Create a new DataFrame for features
+        df_features = pd.concat([df_landmarks['filename'], df_landmarks['frame_number'], df_spatial, df_angles], axis=1)
+
+        new_csv_file_name = csv_file.replace("_landmarks", "")
+        csv_file_path_features = os.path.join(features_directory, f"{os.path.splitext(new_csv_file_name)[0]}_features.csv")
         print(f"Features extracted and saved to {csv_file_path_features}")
         df_features.to_csv(csv_file_path_features, index=False)
 
-        print(f"Processed {photo_file} ({idx + 1} of {total_photos})")
-
-    print(f"{total_photos} photo(s) processed successfully.")
+    print(f"Created features for {len(csv_files)} files")
 
 
 def combine_csv_files(params: Dict[str, str]) -> None:
