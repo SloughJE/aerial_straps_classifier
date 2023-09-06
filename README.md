@@ -1,8 +1,14 @@
 # Aerial Straps Pose Classifier
 
-Aerial straps, an entrancing and demanding discipline of aerial arts, involves performers executing a variety of acrobatic maneuvers while suspended from a pair of straps. The subtleties of each pose and transition, combined with the rapid motion, make automated pose detection a challenging endeavor.
+Aerial straps, a demanding discipline of aerial arts, involves performers executing a variety of acrobatic maneuvers while suspended from a pair of straps. The subtleties of each pose and transition, combined with the rapid motion, make automated pose detection a challenging endeavor.
 
 This project introduces an intelligent solution that harnesses the power of machine learning to accurately classify various aerial straps poses from photos and videos. With the rapid advancements in computer vision, we've engineered a comprehensive pipeline to process, label, and train models that can recognize and categorize key poses used in aerial straps routines.
+
+# What is Aerial Straps?
+From Wikipedia, [aerial straps](https://en.wikipedia.org/wiki/Aerial_straps) "are a type of aerial apparatus on which various feats of strength and flexibility may be performed, often in the context of a circus performance. It is a cotton or nylon web apparatus that looks like two suspended ribbons. Wrapping the strap ends around hands and wrists, the performer performs holds, twists, rolls and manoeuvres, requiring extreme strength and precision similar to men’s rings in gymnastics." 
+If you have seen a [Cique du Soleil](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwjTyt32h5aBAxVaFlkFHV7sAhcQFnoECBkQAQ&url=https%3A%2F%2Fwww.cirquedusoleil.com%2F&usg=AOvVaw0VWSr1RfYBuHS09WwR0tD_&opi=89978449) show, you have probably seen an aerial straps performance. There are many examples on [YouTube](https://www.youtube.com/results?search_query=aerial+straps) of course. 
+Although many of the performances you may see involve the performer moving through poses quickly or doing more advanced or artistic versions of a pose, there are many specific basic poses that can be identified. Some of these poses overlap with other disciplines such as calisthenics or gymnastics, for example the back lever is a common calisthenics position. ![back lever on aerial straps](/data/raw/photos/straps_monarca_back_lever.jpg)
+
 
 ## Project Highlights:
 
