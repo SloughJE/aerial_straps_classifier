@@ -49,7 +49,7 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, param
             'subsample': trial.suggest_float('subsample', 0.5, 1),
             'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
             'enable_categorical' : True,
-            'tree_method': trial.suggest_categorical('tree_method', ['hist', 'approx']),
+            'tree_method': 'hist'
         }
         
         model = XGBClassifier(**param)
@@ -65,7 +65,11 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, param
         print(f"Best hyperparameters found: {best_params}")
         
         # add back the fixed params
-        fixed_params = {'enable_categorical': True}
+        fixed_params = {
+            'tree_method': 'hist',
+            'enable_categorical': True
+            }
+        
         # Merge fixed parameters with the optimized parameters
         best_params.update(fixed_params)
         # Save the best hyperparameters
