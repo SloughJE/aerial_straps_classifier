@@ -1,10 +1,18 @@
-from sklearn.metrics import confusion_matrix, classification_report, roc_curve, auc, precision_recall_curve
-import matplotlib.pyplot as plt
-from pandas import DataFrame, Series
-import numpy as np
-import os
 import json
-from typing import Tuple, Union, List, Any
+import os
+from typing import Any, List
+
+import matplotlib.pyplot as plt
+import numpy as np
+from pandas import DataFrame, Series
+from sklearn.metrics import (
+    auc,
+    classification_report,
+    confusion_matrix,
+    precision_recall_curve,
+    roc_curve,
+)
+
 
 def generate_roc_curves_and_save(predictions_dir: str, model_type: str, data_type: str, label_encoder: Any, y_test: Series, y_prob: np.ndarray) -> None:
     """

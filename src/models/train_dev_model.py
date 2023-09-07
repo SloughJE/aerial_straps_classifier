@@ -1,24 +1,23 @@
 import os
+from typing import Any, Dict, Tuple
+
 import joblib
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
-from typing import Tuple, Dict, Any
-
 from sklearn.base import BaseEstimator
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 from .evaluation_metrics import (
     generate_visualizations_and_save_metrics,
     generate_roc_curves_and_save,
     generate_pr_curves_and_save,
-    generate_feature_importance_visualization
+    generate_feature_importance_visualization,
 )
-
-from .xgboost_model import train_xgb
 from .random_forest_model import train_rf
+from .xgboost_model import train_xgb
 
 # Define the model mapping
 MODEL_MAPPER = {
@@ -30,8 +29,6 @@ MODEL_MAPPER = {
     # ... add other model functions here ...
 }
 
-
-from pandas import DataFrame
 
 def convert_spatial_features_to_categorical(df: DataFrame) -> DataFrame:
     """
