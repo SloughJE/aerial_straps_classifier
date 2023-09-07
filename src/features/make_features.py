@@ -96,10 +96,10 @@ def extract_spatial_features(df_landmarks: pd.DataFrame) -> pd.DataFrame:
     - pd.DataFrame: DataFrame containing the extracted spatial features.
     """
     
-    margin_error = 0.08
+    
     prefix = "spatial_"
     
-    def relative_position(y1: float, y2: float) -> str:
+    def relative_position(y1: float, y2: float, margin_error = 0.08) -> str:
         """
         Calculate the relative position of y1 with respect to y2.
         
@@ -139,7 +139,7 @@ def extract_spatial_features(df_landmarks: pd.DataFrame) -> pd.DataFrame:
 
 #    Add the general hip_to_shoulder and head_to_shoulder with the prefix
     df_landmarks[f'{prefix}hip_to_shoulder'] = relative_position(df_landmarks['avg_hip_y'], df_landmarks['avg_shoulder_y'])
-    df_landmarks[f'{prefix}head_to_shoulder'] = relative_position(df_landmarks['HEAD_y'], df_landmarks['avg_shoulder_y'])
+    df_landmarks[f'{prefix}head_to_shoulder'] = relative_position(df_landmarks['HEAD_y'], df_landmarks['avg_shoulder_y'],margin_error=0.04)
 
     # Build a list of the new columns to return
     columns = [f'{prefix}{side.lower()}_{rel1.lower()}_to_{rel2.lower()}' for side in sides for rel1, rel2 in relations]
