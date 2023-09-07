@@ -39,11 +39,11 @@ features:
 model_dev:
   model_type: xgb
   final_features_filepath: data/processed/features/final_features.csv
-  test_size: 0.2
+  test_size: 0.3
   target_column: label
   predictions_dir: data/results/
   optimize_hyperparams: True
-  score_metric: f1_macro  # You can set this to f1_micro, f1_weighted, 'recall', 'precision', 'roc_auc', etc. as needed (not f1 for multiclass)
+  score_metric: f1_weighted  # You can set this to f1_micro, f1_weighted, 'recall', 'precision', 'roc_auc', etc. as needed (not f1 for multiclass)
 
 model_prod:
   model_type: xgb
