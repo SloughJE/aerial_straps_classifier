@@ -59,7 +59,7 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, param
     if optimize_hyperparams:
         print("Optimizing hyperparameters")
         study = optuna.create_study(direction='minimize')
-        study.optimize(objective, n_trials=20)
+        study.optimize(objective, n_trials=3)
         best_params = study.best_params
         print(f"Best hyperparameters found: {best_params}")
         

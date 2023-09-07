@@ -6,7 +6,7 @@ import os
 import json
 from typing import Tuple, Union, List, Any
 
-def generate_roc_curves_and_save(predictions_dir: str, model_type: str, label_encoder: Any, y_test: Series, y_prob: np.ndarray) -> None:
+def generate_roc_curves_and_save(predictions_dir: str, model_type: str, data_type: str, label_encoder: Any, y_test: Series, y_prob: np.ndarray) -> None:
     """
     Generates ROC curves for each class and saves the visualization.
 
@@ -44,13 +44,13 @@ def generate_roc_curves_and_save(predictions_dir: str, model_type: str, label_en
     plt.plot([0, 1], [0, 1], 'k--')
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title(f'ROC Curves for {model_type} Model (Multiclass)')
+    plt.title(f'ROC Curves for {model_type} {data_type} (Multiclass)')
     plt.legend(loc='lower right')
-    plt.savefig(os.path.join(predictions_dir, model_type, "roc_curves.png"))
+    plt.savefig(os.path.join(predictions_dir, model_type, f"{data_type}_roc_curves.png"))
     plt.close()
 
 
-def generate_pr_curves_and_save(predictions_dir: str, model_type: str, label_encoder: Any, y_test: DataFrame, y_prob: np.ndarray) -> None:
+def generate_pr_curves_and_save(predictions_dir: str, model_type: str, data_type: str, label_encoder: Any, y_test: DataFrame, y_prob: np.ndarray) -> None:
     """
     Generates precision-recall curves for each class and saves the visualization.
 
@@ -85,13 +85,14 @@ def generate_pr_curves_and_save(predictions_dir: str, model_type: str, label_enc
     
     plt.xlabel('Recall')
     plt.ylabel('Precision')
-    plt.title(f'Precision-Recall Curves for {model_type} Model (Multiclass)')
+    plt.title(f'Precision-Recall Curves for {model_type} {data_type} (Multiclass)')
     plt.legend(loc='lower left')
-    plt.savefig(os.path.join(predictions_dir, model_type, "precision_recall_curves.png"))
+    plt.savefig(os.path.join(predictions_dir, model_type, f"{data_type}_precision_recall_curves.png"))
     plt.close()
 
 
-def generate_visualizations_and_save_metrics(predictions_dir: str, model_type: str, label_encoder: Any, y_test: DataFrame, y_pred: np.ndarray) -> None:
+def generate_visualizations_and_save_metrics(predictions_dir: str, model_type: str, data_type: str, 
+                                             label_encoder: Any, y_test: DataFrame, y_pred: np.ndarray) -> None:
     """
     Generates confusion matrix, classification report, and saves visualizations and metrics.
 
@@ -109,7 +110,7 @@ def generate_visualizations_and_save_metrics(predictions_dir: str, model_type: s
     cm = confusion_matrix(y_test, y_pred)
     plt.figure(figsize=(10, 8))
     plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-    plt.title(f"Confusion Matrix for {model_type} Model")
+    plt.title(f"Confusion Matrix for {model_type} {data_type} Predictions")
     plt.colorbar()
     plt.xlabel("Predicted Labels")
     plt.ylabel("True Labels")
@@ -124,18 +125,18 @@ def generate_visualizations_and_save_metrics(predictions_dir: str, model_type: s
             plt.text(j, i, str(cell_value), ha="center", va="center", color=text_color)
 
     plt.tight_layout()
-    plt.savefig(os.path.join(predictions_dir, model_type, "confusion_matrix.png"))
+    plt.savefig(os.path.join(predictions_dir, model_type, f"{data_type}_confusion_matrix.png"))
     plt.close()
 
     # Save classification report
     report = classification_report(y_test, y_pred, target_names=label_encoder.classes_, output_dict=True, 
                                    labels=label_encoder.transform(label_encoder.classes_))
 
-    report_path = os.path.join(predictions_dir, model_type, "classification_report.json")
+    report_path = os.path.join(predictions_dir, model_type, f"{data_type}_classification_report.json")
     with open(report_path, "w") as f:
         json.dump(report, f)
 
-    print("Metrics saved as JSON.")
+    print(f"{data_type} metrics saved as JSON.")
 
 
 def generate_feature_importance_visualization(model: Any, feature_names: List[str], save_path: str) -> None:

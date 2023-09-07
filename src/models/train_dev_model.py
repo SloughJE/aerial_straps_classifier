@@ -178,7 +178,6 @@ def predict_and_evaluate(model: BaseEstimator, X_train: DataFrame, y_train: Data
     """
     predictions_dir = params['predictions_dir']
     model_type = params['model_type']
-    target_column = params['target_column']
 
     # Helper function to predict, evaluate, and save predictions
     def predict_and_save(model: BaseEstimator, X: DataFrame, y: DataFrame, 
@@ -222,9 +221,9 @@ def predict_and_evaluate(model: BaseEstimator, X_train: DataFrame, y_train: Data
 
         df.to_csv(save_path, index=False)
         # Generate and save visualizations and metrics
-        generate_visualizations_and_save_metrics(predictions_dir, model_type, label_encoder, y, y_pred)
-        generate_roc_curves_and_save(predictions_dir, model_type, label_encoder, y, y_prob)
-        generate_pr_curves_and_save(predictions_dir, model_type, label_encoder, y, y_prob)
+        generate_visualizations_and_save_metrics(predictions_dir, model_type,data_type, label_encoder, y, y_pred)
+        generate_roc_curves_and_save(predictions_dir, model_type, data_type, label_encoder, y, y_prob)
+        generate_pr_curves_and_save(predictions_dir, model_type, data_type, label_encoder, y, y_prob)
 
         return accuracy
 
