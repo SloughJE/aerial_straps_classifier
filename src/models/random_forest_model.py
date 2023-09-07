@@ -1,14 +1,13 @@
-import os
 import json
+import os
+from typing import Any, Dict
+
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
-from typing import Dict, Any
-
 import optuna
-
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import KFold, cross_val_score
+from sklearn.model_selection import cross_val_score
 
 
 def train_rf(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, params: Dict[str, Any]) -> RandomForestClassifier:
