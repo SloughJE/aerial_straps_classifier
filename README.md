@@ -119,7 +119,7 @@ This step is automated and doesn't require manual labeling. It merely applies ex
 
 ### Overview
 
-This code extracts pivotal pose landmarks and angles from video frames and photos, optimizing for aerial straps performance analysis. 
+This code extracts pivotal pose landmarks and angles from video frames and photos, optimizing for aerial straps performance analysis. Although there are separate functions for photos and videos to extract landmarks for organization's sake, creating the features from the output is practially the same and performed in one function for both photos and videos.
 
 ### Pose Landmark Extraction
 
