@@ -1,7 +1,5 @@
 # Aerial Straps Pose Classifier
 
-Aerial straps, a demanding discipline of aerial arts, involves performers executing a variety of acrobatic maneuvers while suspended from a pair of straps. The subtleties of each pose and transition, combined with the rapid motion, make automated pose detection a challenging endeavor.
-
 This project introduces an intelligent solution that harnesses the power of machine learning to accurately classify various aerial straps poses from photos and videos. With the rapid advancements in computer vision, we've engineered a comprehensive pipeline to process, label, and train models that can recognize and categorize key poses used in aerial straps routines.
 
 # What is Aerial Straps?
