@@ -23,6 +23,11 @@ labeling:
   input_video_dir: data/interim/reduced/
   input_photo_dir: data/interim/photos/
   output_dir: data/interim/labeled/
+  force_relabel: 
+    - file1.jpg
+    - file2.mov
+  force_relabel_all: True
+
 
 features:
   input_video_dir: data/interim/reduced/

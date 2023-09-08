@@ -161,13 +161,9 @@ def extract_landmarks_for_videos(params: Dict[str, Union[str, bool]]) -> None:
         os.makedirs(landmarks_directory)
 
     # Get a list of all video files in the input directory
-    video_files = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f)) and f.endswith(('.mp4', '.mov'))]
-
-    # Filter out videos that have already been processed
-    videos_to_process = [filename for filename in video_files if not os.path.exists(os.path.join(landmarks_directory, os.path.splitext(filename)[0] + '_landmarks.csv'))]
+    videos_to_process = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f)) and f.endswith(('.mp4', '.mov'))]
     total_videos = len(videos_to_process)
-    already_processed = len(video_files) - total_videos
-    print(f"Total number of videos to process: {total_videos}.\nAlready processed {already_processed}.")
+    print(f"Total number of videos to process: {total_videos}")
 
     for video_file in videos_to_process:
         input_video = os.path.join(input_directory, video_file)
@@ -205,11 +201,9 @@ def extract_landmarks_for_photos(params: Dict[str, Union[str, bool]]) -> None:
     if not os.path.exists(landmarks_directory):
         os.makedirs(landmarks_directory)
 
-    photos_to_process = [filename for filename in photo_files \
-                         if not os.path.exists(os.path.join(landmarks_directory, os.path.splitext(filename)[0] + '_landmarks.csv'))]
+    photos_to_process = [filename for filename in photo_files]
     total_photos = len(photos_to_process)
-    already_processed = len(photo_files) - total_photos
-    print(f"Total number of photos to process: {total_photos}.\nAlready processed {already_processed}.")
+    print(f"Total number of photos to process: {total_photos}.")
 
     for photo_file in photos_to_process:
         input_photo = os.path.join(input_directory, photo_file)

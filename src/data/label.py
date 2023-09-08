@@ -105,70 +105,102 @@ def label_photos(params: dict, photo_path: str) -> list:
 
 
 def run_labeling(params: dict, mode: str) -> None:
-    """Executes the labeling process for media files (either videos or photos) in the specified input directory.
+    """
+    Executes the labeling process for media files (either videos or photos) in the specified input directory.
     Skips files that have already been labeled or start with 'mirrored_'.
     Labels and filenames (or frame numbers for videos) are saved to CSV files in the specified output directory.
     
     Parameters:
-    params (dict): Dictionary containing parameters for labeling.
+    params (dict): Dictionary containing parameters for labeling, including:
+        - 'input_video_dir' (str): The directory containing video files to be labeled.
+        - 'input_photo_dir' (str): The directory containing photo files to be labeled.
+        - 'output_dir' (str): The directory where labeled CSV files will be saved.
+        - 'skip_seconds' (int, optional): The number of seconds to skip between frames when labeling videos. Not used for photos.
+        - 'force_relabel' (list of str, optional): A list of filenames to force relabel, even if they have already been labeled.
+        - 'force_relabel_all' (bool, optional): A flag indicating whether to force relabel all files, ignoring any existing labels.
     mode (str): Either 'video' or 'photo', depending on the media being labeled.
+
+    Raises:
+    ValueError: If an invalid mode is provided.
+
+    Returns:
+    None
+
+    Usage:
+    - Set the appropriate parameters in your 'params' dictionary.
+    - Call this function with the 'params' dictionary and the mode ('video' or 'photo') to start the labeling process.
     """
     
-    # Determine the input directory based on the mode
-    input_dir = params['input_video_dir'] if mode == "video" else params['input_photo_dir']
-    output_dir = params['output_dir']
-    skip_seconds = params.get('skip_seconds', None)  # may not be needed for photos
+    # Determine the input and output directories and the file extensions based on the mode
+    input_dir = params.get('input_video_dir') if mode == "video" else params.get('input_photo_dir')
+    output_dir = params.get('output_dir')
+    skip_seconds = params.get('skip_seconds', None) 
+
+    force_relabel = params.get('force_relabel', [])
+    force_relabel_all = params.get('force_relabel_all', False)
+
+    extensions = {".mov", ".mp4"} if mode == "video" else {".jpg", ".jpeg", ".png"}
     
-    # Fetch appropriate files from the directory based on their extensions and avoid 'mirrored_' prefix
-    if mode == "video":
-        extensions = [".mov", ".mp4"]
-    elif mode == "photo":
-        extensions = [".jpg", ".jpeg", ".png"]
-    else:
+    if not extensions:
         raise ValueError("Invalid mode provided. Expected 'video' or 'photo'.")
-    
+
     files = [f for f in os.listdir(input_dir) if not f.lower().startswith("mirrored_") and any(f.lower().endswith(ext) for ext in extensions)]
-    
+
+    if force_relabel_all:
+            print("INFO: Force relabeling is enabled for all files.")
+    elif force_relabel:
+        print(f"INFO: Force relabeling is enabled for the following files: {', '.join(force_relabel)}")
+        
+        for file_to_relabel in force_relabel:
+            if file_to_relabel not in files:
+                print(f"WARNING: The file '{file_to_relabel}' listed for force relabeling was not found in the directory.")
+
     total_files = len(files)
-    print(f"Total number of {mode}s to label: {total_files}")
+    print(f"INFO: Total number of {mode}s to label: {total_files}")
 
-    for idx, filename in enumerate(files):
-        file_path = os.path.join(input_dir, filename)
-        base_name = os.path.splitext(filename)[0]
+    try:
+        for idx, filename in enumerate(files):
+            file_path = os.path.join(input_dir, filename)
+            base_name = os.path.splitext(filename)[0]
 
-        output_file = os.path.join(output_dir, f"{mode}_") + base_name + "_labeled.csv"
-        
-        # Check if this file has already been labeled
-        if os.path.exists(output_file):
-            print(f"Skipping {filename} ({idx + 1} of {total_files}) - already labeled.")
-            continue
-
-        print(f"Labeling {filename} ({idx + 1} of {total_files})")
-
-        # Label the media based on the mode
-        if mode == "video":
-            labels = label_frames(params, file_path, skip_seconds)
-        else:
-            labels = label_photos(params, file_path)
-        
-        # Save the labels to a temporary CSV file
-        temp_file = tempfile.NamedTemporaryFile(mode='w+', newline='', delete=False)
-        print(f"Saving temporary output to: {temp_file.name}")
-        with temp_file as csvfile:
-            fieldnames = ['frame_number', 'filename', 'label']
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
+            output_file = os.path.join(output_dir, f"{mode}_") + base_name + "_labeled.csv"
             
-            for item, label in labels:
-                # If mode is 'photo', set frame_number to 0, else keep the original frame number
-                frame_number = 0 if mode == 'photo' else item
-                prefixed_filename = f"{mode}_"+filename  # Add the prefix here
-                writer.writerow({'frame_number': frame_number, 'filename': prefixed_filename, 'label': label})
+            # Check if this file has already been labeled
+            if not force_relabel_all and os.path.exists(output_file) and (force_relabel is None or filename not in force_relabel):
+                print(f"Skipping {filename} ({idx + 1} of {total_files}) - already labeled.")
+                continue
+
+            print(f"Labeling {filename} ({idx + 1} of {total_files})")
+
+            # Label the media based on the mode
+            if mode == "video":
+                labels = label_frames(params, file_path, skip_seconds)
+            else:
+                labels = label_photos(params, file_path)
+            
+            # Save the labels to a temporary CSV file
+            temp_file = tempfile.NamedTemporaryFile(mode='w+', newline='', delete=False)
+            print(f"Saving temporary output to: {temp_file.name}")
+            with temp_file as csvfile:
+                fieldnames = ['frame_number', 'filename', 'label']
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+                
+                for item, label in labels:
+                    # If mode is 'photo', set frame_number to 0, else keep the original frame number
+                    frame_number = 0 if mode == 'photo' else item
+                    prefixed_filename = f"{mode}_"+filename  # Add the prefix here
+                    writer.writerow({'frame_number': frame_number, 'filename': prefixed_filename, 'label': label})
 
 
-        # Move the temporary CSV file to the final output directory
-        shutil.move(temp_file.name, output_file)
-        print(f"Labeled {filename} successfully and saved to {output_file}.")
+            # Move the temporary CSV file to the final output directory
+            shutil.move(temp_file.name, output_file)
+            print(f"Labeled {filename} successfully and saved to {output_file}.")
+
+    except KeyboardInterrupt:
+        print("\nLabeling interrupted by user. Exiting.")
+
+        exit(1)
 
     print(f"All {total_files} {mode}s labeled.")
 
