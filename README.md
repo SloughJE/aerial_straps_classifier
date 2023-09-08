@@ -20,7 +20,7 @@ I've been training aerial straps for a few years, and always thought of combinin
 
 - **Data Processing**: Process and prepare media, including videos and photos, to create a streamlined dataset.
 - **Data Labeling**: Distinguish between intricate poses like the 'meathook', 'nutcracker', and 'l-hang', among others.
-- **Feature Extraction**: Extract critical pose landmarks and angles to capture the intricacies of each pose.
+- **Feature Extraction**: Extract critical pose landmarks, create joint angle and spatial relationship features to capture the intricacies of each pose.
 - **Model Training**: Train robust machine learning models, evaluate their performance, and refine them for real-world applications.
 
 # Project Details
