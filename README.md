@@ -170,7 +170,7 @@ For the analysis of static poses from photos, leverage the `extract_landmarks_an
 2. Determine joint angles based on the landmarks obtained.
 3. Catalog the landmarks and angles in dedicated CSV files, each labeled with the respective photo's name.
 
-Here is an example of the landmarks (shown in blue) extracted with connections drawn between the landmarks.
+Here is an example of the landmarks (blue dots) extracted with connections drawn between the landmarks:
 
 | ![landmarks extracted with Mediapipe pose model](/data/processed/photos/straps_monarca_back_lever_small.jpeg) | 
 |:--:| 
