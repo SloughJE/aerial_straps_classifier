@@ -49,7 +49,7 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, param
             'subsample': trial.suggest_float('subsample', 0.5, 1),
             'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
             'enable_categorical' : True,
-            'tree_method': 'hist'
+            'tree_method': 'hist' # best for 'medium' sized datasets (also only hist and approx work with categorical features)
         }
         
         model = XGBClassifier(**param)
