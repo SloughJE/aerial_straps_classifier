@@ -137,7 +137,7 @@ def extract_spatial_features(df_landmarks: pd.DataFrame) -> pd.DataFrame:
     #df_landmarks['elbow_to_hip'] = relative_position(df_landmarks['avg_elbow_y'], df_landmarks['avg_hip_y'])
     #df_landmarks['knee_to_ankle'] = relative_position(df_landmarks['avg_knee_y'], df_landmarks['avg_ankle_y'])
 
-#    Add the general hip_to_shoulder and head_to_shoulder with the prefix
+    # Add the general hip_to_shoulder and head_to_shoulder with the prefix
     df_landmarks[f'{prefix}hip_to_shoulder'] = relative_position(df_landmarks['avg_hip_y'], df_landmarks['avg_shoulder_y'])
     df_landmarks[f'{prefix}head_to_shoulder'] = relative_position(df_landmarks['HEAD_y'], df_landmarks['avg_shoulder_y'],margin_error=0.04)
 

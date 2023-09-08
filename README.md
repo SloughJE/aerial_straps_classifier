@@ -121,7 +121,7 @@ This step is automated and doesn't require manual labeling. It merely applies ex
 
 ### Overview
 
-This code extracts pivotal pose landmarks and angles from video frames and photos, optimizing for aerial straps performance analysis.
+This code extracts pivotal pose landmarks and angles from video frames and photos, optimizing for aerial straps performance analysis. 
 
 ### Pose Landmark Extraction
 
@@ -146,35 +146,42 @@ Some of the extracted joint angle features include:
 
 These joint angles provide insights into the body's orientation and can be valuable features for training machine learning models to classify and analyze image data.
 
-### 1. **Extract Pose Landmarks and Features from Videos**
+### 4.1 **Extract Pose Landmarks from Videos**
 
-Use the `extract_landmarks_and_features_for_videos` function to obtain the required data from video frames:
+Use the `extract_landmarks_for_videos` function to obtain the required data from video frames:
 
 - **Input**: Accepts both original or quality-reduced videos.
-- **Output**: Produces two distinct CSV files for every video: `{video_name}_landmarks.csv` and `{video_name}_features.csv`.
+- **Output**: Produces a distinct CSV files for every video: `video_{video_name}_landmarks.csv`.
 
-**Procedure**:
-1. Break down the video into individual frames and employ the Mediapipe library to extract pose landmarks.
-2. Compute the relevant angles derived from the extracted pose landmarks.
-3. Record the landmarks and angles into separate CSV files, indexed with the video frame number.
 
-### 2. **Extract Pose Landmarks and Features from Photos**
+### 4.2 **Extract Pose Landmarks from Photos**
 
-For the analysis of static poses from photos, leverage the `extract_landmarks_and_features_for_photos` function:
+Use the `extract_landmarks_for_photos` function to obtain the required data from photos:
 
 - **Input**: Takes in high-resolution or down-scaled photos.
-- **Output**: Outputs two CSV files for every photo: `{photo_name}_landmarks.csv` and `{photo_name}_features.csv`.
-
-**Steps**:
-1. Process each photo using landmark extraction tools, including the Mediapipe framework.
-2. Determine joint angles based on the landmarks obtained.
-3. Catalog the landmarks and angles in dedicated CSV files, each labeled with the respective photo's name.
+- **Output**: Outputs one CSV file for every photo: `photo_{photo_name}_landmarks.csv`.
 
 Here is an example of the landmarks (blue dots) extracted with connections drawn between the landmarks:
 
 | ![landmarks extracted with Mediapipe pose model](/data/processed/photos/straps_monarca_back_lever_small.jpeg) | 
 |:--:| 
 | *landmarks extracted with Mediapipe pose model* |
+
+### 4.3 **Create Features from Pose Landmarks**
+
+#### Joint Angle Features
+This step creates joint angle features, calculating various joint angles such as elbow, shoulder, hip, knee, spine, and torso angles from 2D landmark coordinates. The calculate_2d_angle function computes the angle formed by three points (a, b, and c) in a 2D space, with point 'b' being the vertex of the angle. 
+
+Subsequently, the extract_angles function utilizes calculate_2d_angle to determine several specified angles, with landmarks predefined for each angle (e.g., the left elbow angle is defined by the landmarks 'LEFT_SHOULDER', 'LEFT_ELBOW', and 'LEFT_WRIST'). 
+
+#### Spatial Features
+To create 'spatial features', we calculate the relative vertical positions of various pairs of body landmarks using their y-coordinates. In other words, is the left foot above the left hip.
+
+A critical aspect of this function is defining a margin of error when determining the spatial relation. Currently we use 'above','below' or 'level' to characterize the spatial relationship. A margin of error is necessary to realistically categorize the relationship as 'level'. We clearly cannot assume that the hips must be exactly the same y coordinate as the shoulders to be considered 'level' with each other. This magin was established through manual analysis of several photos and videos alongside the data. It's important to note that the chosen margin might not be fully generalizable, and adjustments may be needed based on the specific characteristics of other datasets. It was determined not to be feasible to create any sort of relative margin. However, we do currently define a different margin for the head to shoulder relationship, as it is consistently significantly smaller than the other relationships.
+
+Given a defined margin of error, the function discerns whether one landmark is 'above', 'below', or 'level' with another, helping to identify spatial relationships between different body parts. For instance, understanding if the 'knee' is above, below, or level with the 'hip' may aid in determining the pose. 
+
+Each spatial feature is prefixed with 'spatial_' to craft intuitive and descriptive column names in the final output DataFrame. All csv files in the input folder ending with `_landmarks` will be processed.
 
 ## 5. Combine Features from all CSV Files
 
@@ -231,13 +238,18 @@ python run_pipelines.py --label_photos
 python run_pipelines.py --apply_mirror_labels
 ```
 ### 4. Features
-#### 4.1 Make Features from Videos
+#### 4.1 Extract Pose Landmarks from Videos
 ```bash
-python run_pipelines.py --make_features_videos
+python run_pipelines.py --extract_video_landmarks
 ```
-#### 4.2 Make Features from Photos
+#### 4.2 Extract Pose Landmarks from Photos
 ```bash
-python run_pipelines.py --make_features_photos
+python run_pipelines.py --extract_photo_landmarks
+```
+
+#### 4.3 Create Features
+```bash
+python run_pipelines.py --make_features
 ```
 
 ### 5. Combine Feature CSVs
