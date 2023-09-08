@@ -1,3 +1,4 @@
+import logging
 import csv
 import os
 import shutil
@@ -6,6 +7,8 @@ import cv2
 import pandas as pd
 
 from typing import List, Tuple, Dict
+
+logger = logging.getLogger(__name__)
 
 
 def label_frames(params: Dict[str, Dict[str, str]], video_path: str, skip_seconds: float) -> List[Tuple[int, str]]:
@@ -35,16 +38,16 @@ def label_frames(params: Dict[str, Dict[str, str]], video_path: str, skip_second
             key = cv2.waitKey(0)
             char_key = chr(key & 0xFF)
             if char_key == 'q':
-                print(f"Warning: You are quitting the labeling for {video_path}. "
+                logger.warning(f"Warning: You are quitting the labeling for {video_path}. "
                       "The current progress will not be saved.")
                 exit(0)
             elif char_key in label_mapping:
                 return label_mapping[char_key]
             else:
-                print("Invalid key pressed. "
+                logger.info("Invalid key pressed. "
                       "Please press one of the following keys for labeling or 'q' to quit:")
                 for k, v in label_mapping.items():
-                    print(f"  Press '{k}' for {v}")
+                    logger.info(f"  Press '{k}' for {v}")
 
     while frame_number < total_frames:
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
@@ -89,15 +92,15 @@ def label_photos(params: dict, photo_path: str) -> list:
         key = cv2.waitKey(0)
         char_key = chr(key & 0xFF)
         if char_key == 'q':
-            print(f"Warning: You are quitting the labeling for {photo_path}. The current progress will not be saved.")
+            logger.warning(f"Warning: You are quitting the labeling for {photo_path}. The current progress will not be saved.")
             exit(0)
         elif char_key in label_mapping:
             label = label_mapping[char_key]
             break
         else:
-            print("Invalid key pressed. Please press one of the following keys for labeling or 'q' to quit:")
+            logger.info("Invalid key pressed. Please press one of the following keys for labeling or 'q' to quit:")
             for k, v in label_mapping.items():
-                print(f"  Press '{k}' for {v}")
+                logger.info(f"  Press '{k}' for {v}")
 
     labels.append((photo_path, label))
     cv2.destroyAllWindows()
@@ -147,16 +150,16 @@ def run_labeling(params: dict, mode: str) -> None:
     files = [f for f in os.listdir(input_dir) if not f.lower().startswith("mirrored_") and any(f.lower().endswith(ext) for ext in extensions)]
 
     if force_relabel_all:
-            print("INFO: Force relabeling is enabled for all files.")
+            logger.info("Force relabeling is enabled for all files.")
     elif force_relabel:
-        print(f"INFO: Force relabeling is enabled for the following files: {', '.join(force_relabel)}")
+        logger.info(f"Force relabeling is enabled for the following files: {', '.join(force_relabel)}")
         
         for file_to_relabel in force_relabel:
             if file_to_relabel not in files:
-                print(f"WARNING: The file '{file_to_relabel}' listed for force relabeling was not found in the directory.")
+                logger.warning(f"The file '{file_to_relabel}' listed for force relabeling was not found in the directory.")
 
     total_files = len(files)
-    print(f"INFO: Total number of {mode}s to label: {total_files}")
+    logger.info(f"Total number of {mode}s to label: {total_files}")
 
     try:
         for idx, filename in enumerate(files):
@@ -167,10 +170,10 @@ def run_labeling(params: dict, mode: str) -> None:
             
             # Check if this file has already been labeled
             if not force_relabel_all and os.path.exists(output_file) and (force_relabel is None or filename not in force_relabel):
-                print(f"Skipping {filename} ({idx + 1} of {total_files}) - already labeled.")
+                logger.info(f"Skipping {filename} ({idx + 1} of {total_files}) - already labeled.")
                 continue
 
-            print(f"Labeling {filename} ({idx + 1} of {total_files})")
+            logger.info(f"Labeling {filename} ({idx + 1} of {total_files})")
 
             # Label the media based on the mode
             if mode == "video":
@@ -180,7 +183,7 @@ def run_labeling(params: dict, mode: str) -> None:
             
             # Save the labels to a temporary CSV file
             temp_file = tempfile.NamedTemporaryFile(mode='w+', newline='', delete=False)
-            print(f"Saving temporary output to: {temp_file.name}")
+            logger.info(f"Saving temporary output to: {temp_file.name}")
             with temp_file as csvfile:
                 fieldnames = ['frame_number', 'filename', 'label']
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -195,14 +198,14 @@ def run_labeling(params: dict, mode: str) -> None:
 
             # Move the temporary CSV file to the final output directory
             shutil.move(temp_file.name, output_file)
-            print(f"Labeled {filename} successfully and saved to {output_file}.")
+            logger.info(f"Labeled {filename} successfully and saved to {output_file}.")
 
     except KeyboardInterrupt:
-        print("\nLabeling interrupted by user. Exiting.")
+        logger.info("\nLabeling interrupted by user. Exiting.")
 
         exit(1)
 
-    print(f"All {total_files} {mode}s labeled.")
+    logger.info(f"All {total_files} {mode}s labeled.")
 
 
 def apply_mirror_labels(params: dict) -> None:
@@ -230,7 +233,7 @@ def apply_mirror_labels(params: dict) -> None:
         
         if mirrored_filenames:
             for mirrored_filename in mirrored_filenames:
-                print(f"Adding label files for: {mirrored_filename}")
+                logger.info(f"Adding label files for: {mirrored_filename}")
 
                 # Determine the correct file extension for label based on mode
                 label_ext = '_labeled.csv'
@@ -248,6 +251,6 @@ def apply_mirror_labels(params: dict) -> None:
                 file_ext = os.path.splitext(mirrored_filename)[1]
                 df['filename'] = f'{prefix}mirrored_{base_name}{file_ext}'
                 df.to_csv(mirrored_label_filepath, index=False)
-                print(f"Mirrored labels applied and saved to {mirrored_label_filepath}.")
+                logger.info(f"Mirrored labels applied and saved to {mirrored_label_filepath}.")
         else:
-            print(f"No mirrored files to process in {input_dir}")
+            logger.info(f"No mirrored files to process in {input_dir}")

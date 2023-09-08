@@ -1,3 +1,4 @@
+import logging
 import json
 import os
 from typing import Any, Dict
@@ -9,6 +10,8 @@ from pandas import DataFrame
 from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier
+
+logger = logging.getLogger(__name__)
 
 
 def get_class_weights(le: LabelEncoder) -> dict:
@@ -37,7 +40,7 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, param
     """
     optimize_hyperparams = params.pop('optimize_hyperparams', False)
     weights = get_class_weights(params['label_encoder'])
-    print(f"using class weights: {weights}")
+    logger.info(f"using class weights: {weights}")
     sample_weights = np.array([weights[label] for label in y_train])
 
     def objective(trial):
@@ -58,11 +61,11 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, param
         return -cross_val_score(model, X_train, y_train, cv=5, scoring=score_metric).mean()
 
     if optimize_hyperparams:
-        print("Optimizing hyperparameters")
+        logger.info("Optimizing hyperparameters")
         study = optuna.create_study(direction='minimize')
         study.optimize(objective, n_trials=3)
         best_params = study.best_params
-        print(f"Best hyperparameters found: {best_params}")
+        logger.info(f"Best hyperparameters found: {best_params}")
         
         # add back the fixed params
         fixed_params = {

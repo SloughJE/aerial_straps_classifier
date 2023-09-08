@@ -1,12 +1,16 @@
+import logging
 import sys
 import argparse
 import yaml
-from src.data.label import run_labeling, apply_mirror_labels
 from src.data.process_media import process_media
+from src.data.label import run_labeling, apply_mirror_labels
 from src.features.extract_landmarks import extract_landmarks_for_videos, extract_landmarks_for_photos
 from src.features.make_features import extract_features_from_landmarks, combine_csv_files
 from src.models.train_dev_model import train_model_pipeline
 from src.models.train_prod_model import train_prod_model
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 
 if __name__ == "__main__":
@@ -83,7 +87,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if len(sys.argv) == 1:
-        print("No arguments, please add arguments")
+        logger.warning("No arguments, please add arguments")
     else:
         with open("params.yaml") as f:
             params = yaml.safe_load(f)

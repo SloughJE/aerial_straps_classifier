@@ -1,3 +1,4 @@
+import logging
 import json
 import os
 from typing import Any, Dict
@@ -8,6 +9,8 @@ from pandas import DataFrame
 import optuna
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
+
+logger = logging.getLogger(__name__)
 
 
 def train_rf(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, params: Dict[str, Any]) -> RandomForestClassifier:
@@ -47,7 +50,7 @@ def train_rf(X_train: DataFrame, y_train: np.ndarray, groups: np.ndarray, params
         study = optuna.create_study(direction='maximize')
         study.optimize(objective, n_trials=5)
         best_params = study.best_params
-        print(f"Best hyperparameters found: {best_params}")
+        logger.info(f"Best hyperparameters found: {best_params}")
         model = RandomForestClassifier(**best_params)
 
         # Save the best hyperparameters
