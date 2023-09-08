@@ -1,8 +1,11 @@
+import logging
 import os
 import shutil
 
 from .video_processing import reduce_video_size, mirror_video
 from .photo_processing import mirror_photo
+
+logger = logging.getLogger(__name__)
 
 
 def process_media(params: dict, media_type: str) -> None:
@@ -25,10 +28,10 @@ def process_media(params: dict, media_type: str) -> None:
         reduction_factor = media_processing_config['reduction_factor']
     else:
         reduction_factor = None
-    print(f"loading media from {input_media_dir}")
+    logger.info(f"loading media from {input_media_dir}")
     # Create the output directory if it doesn't exist
     if not os.path.exists(output_media_dir):
-        print("creating output directory...")
+        logger.info("creating output directory...")
         os.makedirs(output_media_dir)
 
     # Filter files based on the media type
@@ -40,23 +43,23 @@ def process_media(params: dict, media_type: str) -> None:
         output_media_path = os.path.join(output_media_dir, filename)
 
         if os.path.exists(output_media_path):
-            print(f"Skipping {filename} as it already exists in the output directory.")
+            logger.info(f"Skipping {filename} as it already exists in the output directory.")
             continue
-        print(f"Processing {media_type}: {filename}")
+        logger.info(f"Processing {media_type}: {filename}")
 
         if media_type == 'video':
             reduce_video_size(input_media_path, output_media_path, reduction_factor)
         elif media_type == 'photo':
             # Process photos (e.g., resizing) here if needed
-            print(f"copying original photos to: {output_media_path}")
+            logger.info(f"copying original photos to: {output_media_path}")
             shutil.copyfile(input_media_path, output_media_path)
 
         if mirror_media:
-            print(f"Mirroring {media_type}: {filename}")
+            logger.info(f"Mirroring {media_type}: {filename}")
             mirror_function = mirror_video if media_type == 'video' else mirror_photo
             mirror_function(output_media_path, output_media_dir)
-            print(f"Mirrored {media_type}: {filename}")
+            logger.info(f"Mirrored {media_type}: {filename}")
 
-        print(f"Processed {filename} ({idx + 1} of {len(media_files)})")
+        logger.info(f"Processed {filename} ({idx + 1} of {len(media_files)})")
 
-    print(f"All {len(media_files)} {media_type} processed successfully.")
+    logger.info(f"All {len(media_files)} {media_type} processed successfully.")

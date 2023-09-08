@@ -1,3 +1,4 @@
+import logging
 import os
 import joblib
 import pandas as pd
@@ -6,6 +7,8 @@ from typing import Dict
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier
+
+logger = logging.getLogger(__name__)
 
 
 def train_prod_model(params: Dict[str, str]) -> None:
@@ -49,4 +52,4 @@ def train_prod_model(params: Dict[str, str]) -> None:
     le_path = os.path.join(model_dir, f"label_encoder.pkl")
     joblib.dump(le, le_path)
 
-    print("Production model trained and saved, along with label encoder.")
+    logger.info("Production model trained and saved, along with label encoder.")

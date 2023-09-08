@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Tuple, Dict, Union
 
@@ -6,6 +7,7 @@ import pandas as pd
 
 from .extract_landmarks import extract_landmarks
 
+logger = logging.getLogger(__name__)
 
 
 def calculate_2d_angle(a: Tuple[float, float], 
@@ -182,10 +184,10 @@ def extract_features_from_landmarks(params: Dict[str, Union[str, bool]]) -> None
 
         new_csv_file_name = csv_file.replace("_landmarks", "")
         csv_file_path_features = os.path.join(features_directory, f"{os.path.splitext(new_csv_file_name)[0]}_features.csv")
-        print(f"Features extracted and saved to {csv_file_path_features}")
+        logger.info(f"Features extracted and saved to {csv_file_path_features}")
         df_features.to_csv(csv_file_path_features, index=False)
 
-    print(f"Created features for {len(csv_files)} files")
+    logger.info(f"Created features for {len(csv_files)} files")
 
 
 def combine_csv_files(params: Dict[str, str]) -> None:
@@ -211,7 +213,7 @@ def combine_csv_files(params: Dict[str, str]) -> None:
     labeled_dir = params['labeled_dir']
 
     if not os.path.exists(interim_features_directory) or not os.path.exists(labeled_dir):
-        print(f"Either the interim features directory or the labeled directory does not exist.")
+        logger.info(f"Either the interim features directory or the labeled directory does not exist.")
         return
 
     # Ensure output directory exists
@@ -219,10 +221,10 @@ def combine_csv_files(params: Dict[str, str]) -> None:
         os.makedirs(final_features_directory)
 
     csv_files = [f for f in os.listdir(interim_features_directory) if f.lower().endswith('_features.csv')]
-    print(f"Combining {len(csv_files)} interim feature files")
+    logger.info(f"Combining {len(csv_files)} interim feature files")
 
     if not csv_files:
-        print("No interim feature files found.")
+        logger.info("No interim feature files found.")
         return
 
     list_of_dfs = []
@@ -230,7 +232,7 @@ def combine_csv_files(params: Dict[str, str]) -> None:
         try:
             list_of_dfs.append(pd.read_csv(os.path.join(interim_features_directory, file)))
         except Exception as e:
-            print(f"Error reading {file}: {e}")
+            logger.info(f"Error reading {file}: {e}")
 
     combined_df = pd.concat(list_of_dfs, ignore_index=True)
 
@@ -240,10 +242,10 @@ def combine_csv_files(params: Dict[str, str]) -> None:
         try:
             labeled_dfs.append(pd.read_csv(os.path.join(labeled_dir, file)))
         except Exception as e:
-            print(f"Error reading labeled file {file}: {e}")
+            logger.info(f"Error reading labeled file {file}: {e}")
 
     if not labeled_dfs:
-        print("No labeled files found.")
+        logger.info("No labeled files found.")
         return
 
     labeled_df = pd.concat(labeled_dfs, ignore_index=True)
@@ -251,18 +253,18 @@ def combine_csv_files(params: Dict[str, str]) -> None:
 
     if final_df['label'].isna().any():
         missing_label_filenames = final_df.loc[final_df['label'].isna(), 'filename'].unique()
-        print("Some rows do not have matching labels. Consider checking your labeled data.")
-        print("Files with missing labels:")
+        logger.warning("Some rows do not have matching labels. Consider checking your labeled data.")
+        logger.info("Files with missing labels:")
         for filename in missing_label_filenames:
-            print(filename)
+            logger.info(filename)
 
     label_counts = final_df['label'].value_counts()
-    print("\nNumber of rows per label:")
+    logger.info("\nNumber of rows per label:")
     for label, count in label_counts.items():
-        print(f"{label}: {count}")
+        logger.info(f"{label}: {count}")
 
     filepath_features = os.path.join(final_features_directory, "final_features.csv")
     final_df.to_csv(filepath_features, index=False)
 
-    print(f"\nFinal features combined with labels and written to {filepath_features}")
+    logger.info(f"\nFinal features combined with labels and written to {filepath_features}")
 

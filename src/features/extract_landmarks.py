@@ -1,3 +1,4 @@
+import logging
 from typing import List, Tuple, Dict, Union
 import os
 
@@ -5,6 +6,8 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 def extract_landmarks_from_frame(frame_rgb: np.ndarray, 
@@ -163,23 +166,23 @@ def extract_landmarks_for_videos(params: Dict[str, Union[str, bool]]) -> None:
     # Get a list of all video files in the input directory
     videos_to_process = [f for f in os.listdir(input_directory) if os.path.isfile(os.path.join(input_directory, f)) and f.endswith(('.mp4', '.mov'))]
     total_videos = len(videos_to_process)
-    print(f"Total number of videos to process: {total_videos}")
+    logger.info(f"Total number of videos to process: {total_videos}")
 
     for video_file in videos_to_process:
         input_video = os.path.join(input_directory, video_file)
         output_video = os.path.join(output_directory, video_file)
-        print(f"Processing video: {input_video}")
+        logger.info(f"Processing video: {input_video}")
 
         df_landmarks = extract_landmarks(input_video, output_video, True, write_video)
         
         video_name = os.path.basename(input_video)
         modified_video_name = "video_" + video_name
         csv_file_path = os.path.join(landmarks_directory, f'{modified_video_name}_landmarks.csv')
-        print(f"Landmarks extracted and saved to {csv_file_path}")
+        logger.info(f"Landmarks extracted and saved to {csv_file_path}")
         df_landmarks['filename'] = modified_video_name
         df_landmarks.to_csv(csv_file_path, index=False)
 
-    print(f"{total_videos} video(s) processed successfully.")
+    logger.info(f"{total_videos} video(s) processed successfully.")
 
 
 def extract_landmarks_for_photos(params: Dict[str, Union[str, bool]]) -> None:
@@ -203,7 +206,7 @@ def extract_landmarks_for_photos(params: Dict[str, Union[str, bool]]) -> None:
 
     photos_to_process = [filename for filename in photo_files]
     total_photos = len(photos_to_process)
-    print(f"Total number of photos to process: {total_photos}.")
+    logger.info(f"Total number of photos to process: {total_photos}.")
 
     for photo_file in photos_to_process:
         input_photo = os.path.join(input_directory, photo_file)
@@ -218,4 +221,4 @@ def extract_landmarks_for_photos(params: Dict[str, Union[str, bool]]) -> None:
         df_landmarks['filename'] = modified_photo_name
         df_landmarks.to_csv(csv_file_path, index=False)
 
-    print(f"{total_photos} photo(s) processed successfully.")
+    logger.info(f"{total_photos} photo(s) processed successfully.")

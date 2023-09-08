@@ -1,3 +1,4 @@
+import logging
 import json
 import os
 from typing import Any, List
@@ -12,6 +13,8 @@ from sklearn.metrics import (
     precision_recall_curve,
     roc_curve,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def generate_roc_curves_and_save(predictions_dir: str, model_type: str, data_type: str, label_encoder: Any, y_test: Series, y_prob: np.ndarray) -> None:
@@ -43,7 +46,7 @@ def generate_roc_curves_and_save(predictions_dir: str, model_type: str, data_typ
             roc_auc[i] = auc(fpr[i], tpr[i])
         except ValueError:
             # Skip this class if it's not present in either predictions or test data
-            print(f"Skipping class {label_encoder.inverse_transform([i])[0]} for ROC curve calculation.")
+            logger.info(f"Skipping class {label_encoder.inverse_transform([i])[0]} for ROC curve calculation.")
     
     for i in range(n_classes):
         if i in fpr:
@@ -85,7 +88,7 @@ def generate_pr_curves_and_save(predictions_dir: str, model_type: str, data_type
             pr_auc[i] = auc(recall[i], precision[i])
         except ValueError:
             # Skip this class if it's not present in either predictions or test data
-            print(f"Skipping class {label_encoder.inverse_transform([i])[0]} for PR curve calculation.")
+            logger.info(f"Skipping class {label_encoder.inverse_transform([i])[0]} for PR curve calculation.")
     
     for i in range(n_classes):
         if i in precision:
@@ -144,7 +147,7 @@ def generate_visualizations_and_save_metrics(predictions_dir: str, model_type: s
     with open(report_path, "w") as f:
         json.dump(report, f)
 
-    print(f"{data_type} metrics saved as JSON.")
+    logger.info(f"{data_type} metrics saved as JSON.")
 
 
 def generate_feature_importance_visualization(model: Any, feature_names: List[str], save_path: str) -> None:
@@ -179,7 +182,7 @@ def generate_feature_importance_visualization(model: Any, feature_names: List[st
         # Save the visualization
         plt.savefig(save_path)
         plt.close()
-        print("Feature importance visualization saved.")
+        logger.info("Feature importance visualization saved.")
 
     else:
-        print("Feature importance visualization is not supported for this model.")
+        logger.info("Feature importance visualization is not supported for this model.")

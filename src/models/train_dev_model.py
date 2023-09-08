@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Any, Dict, Tuple
 
@@ -18,6 +19,9 @@ from .evaluation_metrics import (
 )
 from .random_forest_model import train_rf
 from .xgboost_model import train_xgb
+
+logger = logging.getLogger(__name__)
+
 
 # Define the model mapping
 MODEL_MAPPER = {
@@ -40,7 +44,7 @@ def convert_spatial_features_to_categorical(df: DataFrame) -> DataFrame:
     Returns:
     - pd.DataFrame: The DataFrame with spatial features converted to 'categorical' data type.
     """
-    print("Converting spatial columns to categorical")
+    logger.info("Converting spatial columns to categorical")
     
     # Find the spatial columns
     spatial_columns = df.filter(regex='^spatial_', axis=1).columns
@@ -82,8 +86,8 @@ def split_train_test(df: DataFrame, params: Dict[str, Any]) -> Tuple[DataFrame, 
     train_df = train_df.reset_index(drop=True)
     test_df = test_df.reset_index(drop=True)
     # Print out the number of files and frames for both sets
-    print(f"Training set: {len(train_files)} files with {len(train_df)} frames.")
-    print(f"Test set: {len(test_files)} files with {len(test_df)} frames.")
+    logger.info(f"Training set: {len(train_files)} files with {len(train_df)} frames.")
+    logger.info(f"Test set: {len(test_files)} files with {len(test_df)} frames.")
 
     return train_df, test_df
 
@@ -277,8 +281,8 @@ def train_and_evaluate_model(train_df: DataFrame, test_df: DataFrame, params: Di
     save_path = os.path.join(params['predictions_dir'], params['model_type'], "feature_importance.png")
     generate_feature_importance_visualization(model, feature_names, save_path)
 
-    print(f"Train accuracy: {train_accuracy:.2f}")
-    print(f"Test accuracy: {test_accuracy:.2f}")
+    logger.info(f"Train accuracy: {train_accuracy:.2f}")
+    logger.info(f"Test accuracy: {test_accuracy:.2f}")
     return model
 
 
@@ -320,8 +324,8 @@ def train_model_pipeline(params: Dict[str, Any]) -> BaseEstimator:
     # Add the label encoder to the parameters to be accessible within train_and_evaluate_model
     params['label_encoder'] = label_encoder
     # Train the specified classifier and return the model
-    print(f"training {params['model_type']} model")
+    logger.info(f"training {params['model_type']} model")
     model = train_and_evaluate_model(train_df, test_df, params)
-    print("Trained and saved model successfully!")
+    logger.info("Trained and saved model successfully!")
 
     return model
