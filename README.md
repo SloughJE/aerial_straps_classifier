@@ -4,7 +4,7 @@ This project introduces an intelligent solution that harnesses the power of mach
 
 # What is Aerial Straps?
 From Wikipedia, [aerial straps](https://en.wikipedia.org/wiki/Aerial_straps) "are a type of aerial apparatus on which various feats of strength and flexibility may be performed, often in the context of a circus performance. It is a cotton or nylon web apparatus that looks like two suspended ribbons. Wrapping the strap ends around hands and wrists, the performer performs holds, twists, rolls and manoeuvres, requiring extreme strength and precision similar to men’s rings in gymnastics." 
-If you have seen a [Cique du Soleil](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwjTyt32h5aBAxVaFlkFHV7sAhcQFnoECBkQAQ&url=https%3A%2F%2Fwww.cirquedusoleil.com%2F&usg=AOvVaw0VWSr1RfYBuHS09WwR0tD_&opi=89978449) show, you have probably seen an aerial straps performance. There are many examples on [YouTube](https://www.youtube.com/results?search_query=aerial+straps) of course. 
+If you have seen a [Cirque du Soleil](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwjTyt32h5aBAxVaFlkFHV7sAhcQFnoECBkQAQ&url=https%3A%2F%2Fwww.cirquedusoleil.com%2F&usg=AOvVaw0VWSr1RfYBuHS09WwR0tD_&opi=89978449) show, you have probably seen an aerial straps performance. There are many examples on [YouTube](https://www.youtube.com/results?search_query=aerial+straps) of course. 
 Although many of the performances you may see involve the performer moving through poses quickly or doing more advanced or artistic versions of a pose, there are many specific basic poses that can be identified. Some of these poses overlap with other disciplines such as calisthenics or gymnastics, for example the back lever is a common calisthenics position that can also be performed on aerial straps:
 
 | ![back lever on aerial straps](/data/raw/photos/straps_monarca_back_lever.jpg) | 
@@ -12,7 +12,7 @@ Although many of the performances you may see involve the performer moving throu
 | *back lever on aerial straps* |
 
 # Motivation for Project
-I've been training aerial straps for a few years, and always thought of combining aerial straps and machine learning. At one point, I saw the MediaPipe pose detection model and tried it out on a video of myself. The results were pretty good. Eventually I had the idea to create an aerial straps classification model using MediaPipe to extract features. This projects also attempts to showcase an ML project from end to end, from conception, , data pre-processing, data collection, data labeling, EDA, feature creation, model development, evaluation, hyperparameter tuning and deployment. 
+I've been training aerial straps for a few years, and always thought of combining aerial straps and machine learning. At one point, I saw the MediaPipe pose detection model and tried it out on a video of myself. The results were pretty good. Eventually I had the idea to create an aerial straps classification model using MediaPipe to extract features. This projects also attempts to showcase an ML project from end to end, from conception, data pre-processing, data collection, data labeling, EDA, feature creation, model development, evaluation, hyperparameter tuning and deployment. 
 
 ## Project Highlights:
 
@@ -192,22 +192,17 @@ Ensure the labeled data is consistent and matches the filenames and frame number
 
 ## 6. Model Training and Evaluation
 
-### Overview
-
 This code provides functionalities for training, evaluating, and saving machine learning models for the image analysis task. The main components include:
 
-### 1. **Model Training Pipeline**
+### 6.1 **Model Training Pipeline**
 The `train_dev_model` function manages the process of splitting data, encoding labels, training the classifier, and saving the trained model.
 
-### 2. **Generating Evaluation Metrics**
+### 6.2 **Generating Evaluation Metrics**
 Functions such as `generate_roc_curves_and_save`, `generate_pr_curves_and_save`, `generate_visualizations_and_save_metrics`, and `generate_feature_importance_visualization` are used to generate evaluation metrics and visualizations for the trained models.
 
 ## 7. Model Training: Production
 
-### Overview
-
 The `train_prod_model` method trains a machine learning model (e.g., XGBoost or RandomForest) on the entire dataset and saves it along with the label encoder.
-
 
 # Usage Sequence
 
