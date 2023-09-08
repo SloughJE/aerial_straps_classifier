@@ -39,7 +39,7 @@ features:
 model_dev:
   model_type: xgb
   final_features_filepath: data/processed/features/final_features.csv
-  test_size: 0.3
+  test_size: 0.2
   target_column: label
   predictions_dir: data/results/
   optimize_hyperparams: True
