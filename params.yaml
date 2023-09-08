@@ -31,6 +31,7 @@ features:
   input_photo_dir: data/interim/photos/
   output_photo_dir: data/processed/photos/
   save_annotated_photo: False
+  interim_landmarks_directory: data/interim/landmarks
   interim_features_directory: data/interim/features
   labeled_dir: data/interim/labeled
   final_features_directory: data/processed/features
@@ -42,7 +43,7 @@ model_dev:
   target_column: label
   predictions_dir: data/results/
   optimize_hyperparams: True
-  score_metric: f1_macro  # You can set this to f1_micro, f1_weighted, 'recall', 'precision', 'roc_auc', etc. as needed (not f1 for multiclass)
+  score_metric: f1_weighted  # You can set this to f1_micro, f1_weighted, 'recall', 'precision', 'roc_auc', etc. as needed (not f1 for multiclass)
 
 model_prod:
   model_type: xgb

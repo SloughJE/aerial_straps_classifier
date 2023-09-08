@@ -83,3 +83,41 @@ def train_xgb(X_train, y_train, groups, params):
     if not optimize_hyperparams:
         model.fit(X_train, y_train)
     return model
+
+
+
+##########
+
+# not implemented, need more data for this
+class FileNameBasedKFold:
+    def __init__(self, n_splits=5):
+        self.n_splits = n_splits
+    
+    def split(self, X, y, groups):
+        unique_files = groups.unique()
+        kf = KFold(n_splits=self.n_splits)
+        for train_files_idx, test_files_idx in kf.split(unique_files):
+            train_files = unique_files[train_files_idx]
+            test_files = unique_files[test_files_idx]
+            train_idx = X.index[groups.isin(train_files)]
+            test_idx = X.index[groups.isin(test_files)]
+            yield train_idx, test_idx
+    
+    def get_n_splits(self, X, y=None, groups=None):
+        return self.n_splits
+    
+
+def custom_cross_val_score(model, X, y, groups, cv, scoring_func):
+    scores = []
+    for train_idx, test_idx in cv.split(X, y, groups):
+        X_train_fold = X.iloc[train_idx]
+        y_train_fold = y.iloc[train_idx]
+        X_test_fold = X.iloc[test_idx]
+        y_test_fold = y.iloc[test_idx]
+        
+        model.fit(X_train_fold, y_train_fold)
+        y_pred = model.predict(X_test_fold)
+        score = scoring_func(y_test_fold, y_pred)
+        scores.append(score)
+    return np.array(scores)
+
