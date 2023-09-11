@@ -212,8 +212,9 @@ def train_model_pipeline(params: Dict[str, Any]) -> BaseEstimator:
     final_features_filepath = params['final_features_filepath']
     df = pd.read_csv(final_features_filepath)
 
-    print(f"removing back lever")
+    print(f"removing back lever and replacing l-hang")
     df = df[df.label!='back lever']
+    df['label'] = df['label'].replace('l-hang', 'other pose or transition')
 
     # convert spatial features to categorical:
     df = convert_spatial_features_to_categorical(df)
