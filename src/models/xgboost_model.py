@@ -74,25 +74,25 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_tes
         model = XGBClassifier(**param)
  
         with mlflow.start_run(run_name=f'Trial_{trial.number}', nested=True):  # Set a descriptive name for each trial
-                score_metric = params.get('score_metric', 'accuracy')  # Defaulting to accuracy if score_metric isn't provided
-                mlflow.log_param("score_metric", score_metric)  # Log the score metric
+            score_metric = params.get('score_metric', 'accuracy')  # Defaulting to accuracy if score_metric isn't provided
+            mlflow.log_param("score_metric", score_metric)  # Log the score metric
 
-                model = XGBClassifier(**param)
-                score = -cross_val_score(model, X_train, y_train, cv=5, scoring=score_metric).mean()
+            model = XGBClassifier(**param)
+            score = cross_val_score(model, X_train, y_train, cv=5, scoring=score_metric).mean()
 
-                mlflow.log_params(param)  # Log the parameters for this trial
-                mlflow.log_metric("cross_val_score", -score)  # Log the score for this trial (note the negative sign to make it positive)
+            mlflow.log_params(param)  # Log the parameters for this trial
+            mlflow.log_metric("cross_val_score", score)  # Log the score for this trial (note the negative sign to make it positive)
 
         return score
 
     if optimize_hyperparams:
 
         logger.info("Optimizing hyperparameters")
-        study = optuna.create_study(direction='minimize')
+        study = optuna.create_study(direction='maximize')
 
         parent_run_name = "Hyperparameter_Optimization"
         with mlflow.start_run(run_name=parent_run_name, nested=True):  # Start a new run for the optimization step
-            study.optimize(objective, n_trials=3)
+            study.optimize(objective, n_trials=10)
 
         best_params = study.best_params
         logger.info(f"Best hyperparameters found: {best_params}")
