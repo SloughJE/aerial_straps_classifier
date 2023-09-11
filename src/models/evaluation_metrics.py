@@ -6,6 +6,8 @@ from typing import Any, List
 import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame, Series
+import mlflow
+
 from sklearn.metrics import (
     auc,
     classification_report,
@@ -60,6 +62,13 @@ def generate_roc_curves_and_save(predictions_dir: str, model_type: str, data_typ
     plt.savefig(os.path.join(predictions_dir, model_type, f"{data_type}_roc_curves.png"))
     plt.close()
 
+    mlflow.log_artifact(os.path.join(predictions_dir, model_type, f"{data_type}_roc_curves.png"))
+
+    for i in range(n_classes):
+        if i in fpr:
+            # Log AUC as an MLflow metric
+            mlflow.log_metric(f"roc_auc_class_{i}", roc_auc[i])
+
 
 def generate_pr_curves_and_save(predictions_dir: str, model_type: str, data_type: str, label_encoder: Any, y_test: DataFrame, y_prob: np.ndarray) -> None:
     """
@@ -98,8 +107,10 @@ def generate_pr_curves_and_save(predictions_dir: str, model_type: str, data_type
     plt.ylabel('Precision')
     plt.title(f'Precision-Recall Curves for {model_type} {data_type} (Multiclass)')
     plt.legend(loc='lower left')
-    plt.savefig(os.path.join(predictions_dir, model_type, f"{data_type}_precision_recall_curves.png"))
+    save_path = os.path.join(predictions_dir, model_type, f"{data_type}_precision_recall_curves.png")
+    plt.savefig(save_path)
     plt.close()
+    mlflow.log_artifact(save_path)
 
 
 def generate_visualizations_and_save_metrics(predictions_dir: str, model_type: str, data_type: str, 
@@ -136,16 +147,34 @@ def generate_visualizations_and_save_metrics(predictions_dir: str, model_type: s
             plt.text(j, i, str(cell_value), ha="center", va="center", color=text_color)
 
     plt.tight_layout()
-    plt.savefig(os.path.join(predictions_dir, model_type, f"{data_type}_confusion_matrix.png"))
+    save_path = os.path.join(predictions_dir, model_type, f"{data_type}_confusion_matrix.png")
+    plt.savefig(save_path)
     plt.close()
+
+    mlflow.log_artifact(save_path)
 
     # Save classification report
     report = classification_report(y_test, y_pred, target_names=label_encoder.classes_, output_dict=True, 
                                    labels=label_encoder.transform(label_encoder.classes_))
 
+    # Log individual metrics to MLFlow
+    for label in label_encoder.classes_:
+        mlflow.log_metric(f"{label}_precision", report[label]['precision'])
+        mlflow.log_metric(f"{label}_recall", report[label]['recall'])
+        mlflow.log_metric(f"{label}_f1_score", report[label]['f1-score'])
+        mlflow.log_metric(f"{label}_support", report[label]['support'])
+
+    # Log aggregate metrics to MLFlow
+    mlflow.log_metric("macro_avg_precision", report['macro avg']['precision'])
+    mlflow.log_metric("macro_avg_recall", report['macro avg']['recall'])
+    mlflow.log_metric("macro_avg_f1_score", report['macro avg']['f1-score'])
+    mlflow.log_metric("macro_avg_support", report['macro avg']['support'])
+
     report_path = os.path.join(predictions_dir, model_type, f"{data_type}_classification_report.json")
     with open(report_path, "w") as f:
         json.dump(report, f)
+
+    mlflow.log_artifact(report_path)
 
     logger.info(f"{data_type} metrics saved as JSON.")
 
@@ -182,6 +211,8 @@ def generate_feature_importance_visualization(model: Any, feature_names: List[st
         # Save the visualization
         plt.savefig(save_path)
         plt.close()
+        mlflow.log_artifact(save_path)
+
         logger.info("Feature importance visualization saved.")
 
     else:

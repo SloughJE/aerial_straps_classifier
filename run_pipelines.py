@@ -89,6 +89,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         logger.warning("No arguments, please add arguments")
     else:
+        
         with open("params.yaml") as f:
             params = yaml.safe_load(f)
 
