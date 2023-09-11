@@ -81,7 +81,7 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_tes
             score = cross_val_score(model, X_train, y_train, cv=5, scoring=score_metric).mean()
 
             mlflow.log_params(param)  # Log the parameters for this trial
-            mlflow.log_metric("cross_val_score", score)  # Log the score for this trial (note the negative sign to make it positive)
+            mlflow.log_metric(f"cross_val_score_{score_metric}", score)  # Log the score for this trial (note the negative sign to make it positive)
 
         return score
 
