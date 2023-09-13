@@ -73,14 +73,8 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--train_dev_model",
-        help="split train test, and train model",
-        action="store_true"
-    )
-
-    parser.add_argument(
-        "--train_prod_model",
-        help="train prod model on entire dataset",
+        "--train_model",
+        help="split train test, and train dev model, optionally optimize hyperparam, train prod model",
         action="store_true"
     )
 
@@ -138,12 +132,8 @@ if __name__ == "__main__":
                 params['features']
             )
 
-        if args.train_dev_model:
+        if args.train_model:
             train_model_pipeline(
-                params['model_dev']
+                params['model_training']
             )
 
-        if args.train_prod_model:
-            train_prod_model(
-                params['model_prod']
-            )

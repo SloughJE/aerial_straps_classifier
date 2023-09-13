@@ -28,7 +28,6 @@ labeling:
     - file2.mov
   force_relabel_all: True
 
-
 features:
   input_video_dir: data/interim/reduced/
   output_video_dir: data/processed/videos/
@@ -42,17 +41,22 @@ features:
   final_features_directory: data/processed/features
 
 model_dev:
+  MLflow_config:
+    experiment_name: "test_XGB_Optimization_and_Training"
+    run_names:
+      main: "Dev_Pipeline_Run"
+      hyperparameter_optimization: "Hyperparameter_Optimization"
+      final_training: "Training_with_Optimized_Params"
+      prod_training: "Production_Model"
   model_type: xgb
   final_features_filepath: data/processed/features/final_features.csv
   test_size: 0.2
   target_column: label
   predictions_dir: data/results/
   optimize_hyperparams: True
-  score_metric: f1_weighted  # You can set this to f1_micro, f1_weighted, 'recall', 'precision', 'roc_auc', etc. as needed (not f1 for multiclass)
+  num_trials: 2
+  score_metric: f1_weighted  #f1_micro, f1_weighted, 'recall', 'precision', 'roc_auc', etc. as needed (not f1 for multiclass)
+  train_prod_model: True
 
-model_prod:
-  model_type: xgb
-  final_features_filepath: data/processed/features/final_features.csv
-  target_column: label
   
   

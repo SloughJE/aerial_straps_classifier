@@ -1,23 +1,15 @@
 import logging
-import os
 from typing import Any, Dict, Tuple
 
-import joblib
 import numpy as np
 import pandas as pd
 import mlflow
 from pandas import DataFrame
 from sklearn.base import BaseEstimator
-from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from mlflow.data.pandas_dataset import PandasDataset
 
-from .evaluation_metrics import (
-    generate_visualizations_and_save_metrics,
-    generate_roc_curves_and_save,
-    generate_pr_curves_and_save,
-    generate_feature_importance_visualization,
-)
 from .random_forest_model import train_rf
 from .xgboost_model import train_xgb
 
@@ -26,12 +18,10 @@ logger = logging.getLogger(__name__)
 
 # Define the model mapping
 MODEL_MAPPER = {
-    'rf': train_rf,
+    #'rf': train_rf,
     'xgb': train_xgb,
-    #'linear_regression': train_linear_regression,
     # 'svm': train_svm,
     # 'neural_net': train_neural_net,
-    # ... add other model functions here ...
 }
 
 
@@ -86,7 +76,7 @@ def split_train_test(df: DataFrame, params: Dict[str, Any]) -> Tuple[DataFrame, 
     # Ensure the index is from 0 to len(df), will need for CV splitting based on filename
     train_df = train_df.reset_index(drop=True)
     test_df = test_df.reset_index(drop=True)
-    # Print out the number of files and frames for both sets
+
     logger.info(f"Training set: {len(train_files)} files with {len(train_df)} frames.")
     logger.info(f"Test set: {len(test_files)} files with {len(test_df)} frames.")
 
@@ -150,13 +140,12 @@ def train_model(X_train: DataFrame, y_train: DataFrame, X_test: DataFrame, y_tes
     - params (dict): The parameters for the model.
 
     Returns:
-    - model (BaseEstimator): The trained model.
+    - None
     """
     # Drop unnecessary columns before training
     X_train = X_train.drop(columns=['filename', 'frame_number'])
     model_type = params['model_type']
-    model = MODEL_MAPPER[model_type](X_train, y_train, X_test,y_test, groups, params)
-    return model
+    MODEL_MAPPER[model_type](X_train, y_train, X_test,y_test, groups, params)
 
 
 def train_and_evaluate_model(train_df: DataFrame, test_df: DataFrame, params: Dict[str, Any]) -> BaseEstimator:
@@ -175,25 +164,35 @@ def train_and_evaluate_model(train_df: DataFrame, test_df: DataFrame, params: Di
     label_encoder = params['label_encoder']
 
     X_train, y_train, X_test, y_test, groups = preprocess_data(train_df, test_df, target_column)
-    model = train_model(X_train, y_train, X_test, y_test, groups, params)
+    train_model(X_train, y_train, X_test, y_test, groups, params)
     
-    #train_accuracy, test_accuracy = predict_and_evaluate(model, X_train, y_train, X_test, y_test, params)
-    #save_model(model, params, label_encoder)
 
-    #feature_names = list(X_train.columns)
-    #feature_names = [col for col in feature_names if col not in ['filename', 'frame_number']]
-    #save_path = os.path.join(params['predictions_dir'], params['model_type'], "feature_importance.png")
-    #generate_feature_importance_visualization(model, feature_names, save_path)
+def log_mlflow_metadata(params, df, train_df, test_df):
 
-    #logger.info(f"Train accuracy: {train_accuracy:.2f}")
-    #logger.info(f"Test accuracy: {test_accuracy:.2f}")
-    return model
+    # Log the model_dev parameters
+    for key, value in params.items():
+        mlflow.log_param(key, value)
+
+    dataset: PandasDataset = mlflow.data.from_pandas(df, targets=params['target_column'], name="Dev Dataset")
+    mlflow.log_input(dataset, context="Dev: Full Dataset")
+    mlflow.set_tag("dataset.version", "v0.1")
+    mlflow.set_tag("dataset.source", params['final_features_filepath'])
+    test_size = params.get('test_size', 0.2)
+    train_size = 1.0 - test_size
+    split_info = f"{train_size*100:.0f}-{test_size*100:.0f}"
+    mlflow.set_tag("dataset.split", split_info)
+    mlflow.set_tag("dataset.preprocessing", "removing back lever and replacing l-hang")
+
+    train_dataset: PandasDataset = mlflow.data.from_pandas(train_df, targets=params['target_column'], name="Train Dataset")
+    test_dataset: PandasDataset = mlflow.data.from_pandas(test_df, targets=params['target_column'], name="Test Dataset")
+    mlflow.log_input(train_dataset, context="Dev: train dataset")
+    mlflow.log_input(test_dataset, context="Dev: test dataset")
 
 
 def train_model_pipeline(params: Dict[str, Any]) -> BaseEstimator:
     """
     Manages the process of splitting the data into train/test sets, encoding the target labels,
-    and training a specified classifier.
+    and training a specified classifier. Logs dataset and training details to MLflow.
 
     Args:
     - params (dict): Dictionary containing the following key-value pairs:
@@ -205,32 +204,34 @@ def train_model_pipeline(params: Dict[str, Any]) -> BaseEstimator:
         - target_column (str): The name of the target column in the dataframe.
 
     Returns:
-    - model (BaseEstimator): The trained classifier model.
+    - None
     """
+    mlflow.set_experiment(params['MLflow_config']['experiment_name']) 
 
-    # load data
-    final_features_filepath = params['final_features_filepath']
-    df = pd.read_csv(final_features_filepath)
+    with mlflow.start_run(run_name=params['MLflow_config']['run_names']['main']):
+        # load data
+        final_features_filepath = params['final_features_filepath']
+        df = pd.read_csv(final_features_filepath)
 
-    print(f"removing back lever and replacing l-hang")
-    df = df[df.label!='back lever']
-    df['label'] = df['label'].replace('l-hang', 'other pose or transition')
+        # Preprocessing steps
+        print(f"removing back lever and replacing l-hang")
+        df = df[df.label!='back lever']
+        df['label'] = df['label'].replace('l-hang', 'other pose or transition')
+        df = convert_spatial_features_to_categorical(df)
 
-    # convert spatial features to categorical:
-    df = convert_spatial_features_to_categorical(df)
+        # Split data into training and testing sets
+        train_df, test_df = split_train_test(df, params)
 
-    # Split data into training and testing sets
-    train_df, test_df = split_train_test(df, params)
+        log_mlflow_metadata(params, df, train_df, test_df)
 
-    # Encode the target labels
-    target_column = params['target_column']
-    train_df, test_df, label_encoder = encode_labels(train_df, test_df, target_column)
+        # Encode the target labels
+        target_column = params['target_column']
+        train_df, test_df, label_encoder = encode_labels(train_df, test_df, target_column)
 
-    # Add the label encoder to the parameters to be accessible within train_and_evaluate_model
-    params['label_encoder'] = label_encoder
-    # Train the specified classifier and return the model
-    logger.info(f"training {params['model_type']} model")
-    model = train_and_evaluate_model(train_df, test_df, params)
-    logger.info("Trained and saved model successfully!")
+        # Add the label encoder to the parameters to be accessible within train_and_evaluate_model
+        params['label_encoder'] = label_encoder
+        # Train the specified classifier and return the model
+        logger.info(f"training {params['model_type']} model")
+        train_and_evaluate_model(train_df, test_df, params)
+        logger.info("Trained and saved model successfully!")
 
-    return model

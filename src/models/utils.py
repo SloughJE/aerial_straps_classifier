@@ -1,22 +1,16 @@
-import logging
 import os
 from typing import Any, Dict, Tuple
 
-import joblib
 import numpy as np
 import pandas as pd
-import mlflow
 from pandas import DataFrame
 from sklearn.base import BaseEstimator
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 
 from .evaluation_metrics import (
     generate_visualizations_and_save_metrics,
     generate_roc_curves_and_save,
     generate_pr_curves_and_save,
-    generate_feature_importance_visualization,
 )
 
 def predict_and_evaluate(model: BaseEstimator, X_train: DataFrame, y_train: DataFrame, 
@@ -95,27 +89,3 @@ def predict_and_evaluate(model: BaseEstimator, X_train: DataFrame, y_train: Data
 
     return train_accuracy, test_accuracy
 
-
-def save_model(model: BaseEstimator, params: Dict[str, Any], label_encoder: LabelEncoder) -> None:
-    """
-    Saves the trained model and label encoder to disk.
-
-    Args:
-    - model (BaseEstimator): The trained model.
-    - params (dict): The parameters for the model.
-    - label_encoder (LabelEncoder): The label encoder.
-
-    Returns:
-    - None
-    """
-    model_type = params['model_type']
-    models_dir = 'models/dev'
-    model_dir = os.path.join(models_dir, model_type)
-    os.makedirs(model_dir, exist_ok=True)
-    joblib.dump(model, os.path.join(model_dir, f'{model_type}_model.pkl'))
-    joblib.dump(label_encoder, os.path.join(model_dir, 'label_encoder.pkl'))
-    # After training your model
-    mlflow_model_filepath = os.path.join(model_dir, f'{model_type}_model.json')
-    model.save_model(mlflow_model_filepath)
-    # Log the model in JSON format
-    mlflow.log_artifact(mlflow_model_filepath)
