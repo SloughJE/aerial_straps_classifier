@@ -40,7 +40,7 @@ features:
   labeled_dir: data/interim/labeled
   final_features_directory: data/processed/features
 
-model_dev:
+model_training:
   MLflow_config:
     experiment_name: "test_XGB_Optimization_and_Training"
     run_names:
