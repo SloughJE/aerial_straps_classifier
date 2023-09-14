@@ -195,14 +195,11 @@ Ensure the labeled data is consistent and matches the filenames and frame number
 This code provides functionalities for training, evaluating, and saving machine learning models for the image analysis task. The main components include:
 
 ### 6.1 **Model Training Pipeline**
-The `train_dev_model` function manages the process of splitting data, encoding labels, training the classifier, and saving the trained model.
+The `train_model` function manages the process of splitting data, encoding labels, training the classifier, and saving the trained model.
 
 ### 6.2 **Generating Evaluation Metrics**
 Functions such as `generate_roc_curves_and_save`, `generate_pr_curves_and_save`, `generate_visualizations_and_save_metrics`, and `generate_feature_importance_visualization` are used to generate evaluation metrics and visualizations for the trained models.
 
-## 7. Model Training: Production
-
-The `train_prod_model` method trains a machine learning model (e.g., XGBoost or RandomForest) on the entire dataset and saves it along with the label encoder.
 
 # Usage Sequence
 
@@ -250,14 +247,9 @@ python run_pipelines.py --make_features
 python run_pipelines.py --combine_feature_csv
 ```
 
-### 6. Train Development Model
+### 6. Train Model
 ```bash
-python run_pipelines.py --train_dev_model
-```
-
-### 7. Train Production Model
-```bash
-python run_pipelines.py --train_prod_model
+python run_pipelines.py --train_model
 ```
 
 
