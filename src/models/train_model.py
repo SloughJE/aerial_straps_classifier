@@ -10,7 +10,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from mlflow.data.pandas_dataset import PandasDataset
 
-from .random_forest_model import train_rf
 from .xgboost_model import train_xgb
 
 logger = logging.getLogger(__name__)
@@ -161,7 +160,6 @@ def train_and_evaluate_model(train_df: DataFrame, test_df: DataFrame, params: Di
     - model (BaseEstimator): The trained model.
     """
     target_column = params['target_column']
-    label_encoder = params['label_encoder']
 
     X_train, y_train, X_test, y_test, groups = preprocess_data(train_df, test_df, target_column)
     train_model(X_train, y_train, X_test, y_test, groups, params)

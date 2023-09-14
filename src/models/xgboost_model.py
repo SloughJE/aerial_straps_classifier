@@ -47,26 +47,28 @@ def train_production_model(X_train: DataFrame, X_test: DataFrame, y_train: np.nd
     Returns:
     - None
     """
-    logger.info("Training production model")
-
-    # Drop unnecessary columns
-    X_train = X_train.drop(columns=['filename', 'frame_number'], errors='ignore')
-    X_test = X_test.drop(columns=['filename', 'frame_number'], errors='ignore')
-
-    # Combine the training and testing datasets to form the full dataset
-    X_full = pd.concat([X_train, X_test])
-    y_full = pd.concat([y_train, y_test])
-
-    # Define the directory structure for the production model
-    model_type = params['model_type']
-    prod_models_dir = 'models/prod'
-    prod_model_dir = os.path.join(prod_models_dir, model_type)
-    os.makedirs(prod_model_dir, exist_ok=True)
-
-    # Define the filepath for MLflow logging
-    mlflow_prod_model_filepath = os.path.join(prod_model_dir, model_type)
-
+    
     with mlflow.start_run(run_name=params['MLflow_config']['run_names']['prod_training'], nested=True):
+
+        logger.info("Training production model")
+
+        # Drop unnecessary columns
+        X_train = X_train.drop(columns=['filename', 'frame_number'], errors='ignore')
+        X_test = X_test.drop(columns=['filename', 'frame_number'], errors='ignore')
+
+        # Combine the training and testing datasets to form the full dataset
+        X_full = pd.concat([X_train, X_test])
+        y_full = pd.concat([y_train, y_test])
+
+        # Define the directory structure for the production model
+        model_type = params['model_type']
+        prod_models_dir = 'models/prod'
+        prod_model_dir = os.path.join(prod_models_dir, model_type)
+        os.makedirs(prod_model_dir, exist_ok=True)
+
+        # Define the filepath for MLflow logging
+        mlflow_prod_model_filepath = os.path.join(prod_model_dir, model_type)
+
         # Log parameters and dataset information
         mlflow.log_params(best_params)
         mlflow.log_param('num_samples', len(X_full))
@@ -149,7 +151,7 @@ def full_train_dataset_training(X_train: DataFrame, y_train: np.ndarray, X_test:
         save_path = os.path.join(params['predictions_dir'], params['model_type'], "feature_importance.png")
         generate_feature_importance_visualization(model, list(X_train.columns), save_path)
 
-        mlflow.end_run()
+        #mlflow.end_run()
 
 
 def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_test: np.ndarray, 
@@ -204,14 +206,15 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_tes
 
     if optimize_hyperparams:
 
-        logger.info("Optimizing hyperparameters")
-        study = optuna.create_study(direction='maximize')
-    
-        models_dir = 'models/dev'
-        model_dir = os.path.join(models_dir, 'xgb')
-        os.makedirs(model_dir, exist_ok=True)
-        
         with mlflow.start_run(run_name=params['MLflow_config']['run_names']['hyperparameter_optimization'], nested=True):
+
+            logger.info("Optimizing hyperparameters")
+            study = optuna.create_study(direction='maximize')
+        
+            models_dir = 'models/dev'
+            model_dir = os.path.join(models_dir, 'xgb')
+            os.makedirs(model_dir, exist_ok=True)
+        
             study.optimize(objective, n_trials=params['num_trials'])
             study_file_path = os.path.join(model_dir, 'optuna_study.pkl')
             joblib.dump(study, study_file_path)

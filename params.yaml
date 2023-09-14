@@ -46,8 +46,8 @@ model_training:
     run_names:
       main: "Dev_Pipeline_Run"
       hyperparameter_optimization: "Hyperparameter_Optimization"
-      final_training: "Training_with_Optimized_Params"
-      prod_training: "Production_Model"
+      final_training: "Retrain_on_Train_Dataset"
+      prod_training: "Production_Model_FULL_Dataset"
   model_type: xgb
   final_features_filepath: data/processed/features/final_features.csv
   test_size: 0.2
