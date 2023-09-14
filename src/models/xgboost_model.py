@@ -32,17 +32,78 @@ def get_class_weights(le: LabelEncoder) -> dict:
     return weights
 
 
-def final_training(X_train, y_train, X_test, y_test, best_params, params):
+def train_production_model(X_train: DataFrame, X_test: DataFrame, y_train: np.ndarray, y_test: np.ndarray, best_params: Dict[str, Any], params: Dict[str, Any]) -> None:
     """
-    Conducts the final training of the XGB model using the best parameters obtained from hyperparameter optimization.
+    Trains the production model using the full dataset and logs the details to MLFlow.
+
+    Args:
+    - X_train (DataFrame): The training features.
+    - X_test (DataFrame): The testing features.
+    - y_train (np.ndarray): The training target.
+    - y_test (np.ndarray): The testing target.
+    - best_params (Dict[str, Any]): The best parameters obtained from hyperparameter optimization.
+    - params (Dict[str, Any]): Dictionary containing the parameters for the model, including 'model_type', 'MLflow_config', 'predictions_dir', etc.
+
+    Returns:
+    - None
+    """
+    logger.info("Training production model")
+
+    # Drop unnecessary columns
+    X_train = X_train.drop(columns=['filename', 'frame_number'], errors='ignore')
+    X_test = X_test.drop(columns=['filename', 'frame_number'], errors='ignore')
+
+    # Combine the training and testing datasets to form the full dataset
+    X_full = pd.concat([X_train, X_test])
+    y_full = pd.concat([y_train, y_test])
+
+    # Define the directory structure for the production model
+    model_type = params['model_type']
+    prod_models_dir = 'models/prod'
+    prod_model_dir = os.path.join(prod_models_dir, model_type)
+    os.makedirs(prod_model_dir, exist_ok=True)
+
+    # Define the filepath for MLflow logging
+    mlflow_prod_model_filepath = os.path.join(prod_model_dir, model_type)
+
+    with mlflow.start_run(run_name=params['MLflow_config']['run_names']['prod_training'], nested=True):
+        # Log parameters and dataset information
+        mlflow.log_params(best_params)
+        mlflow.log_param('num_samples', len(X_full))
+        mlflow.log_param('num_features', X_full.shape[1])
+        prod_dataset: PandasDataset = mlflow.data.from_pandas(pd.concat([X_full,y_full],axis=1), 
+                                                              targets=params['target_column'], name="Prod Dataset")
+        mlflow.log_input(prod_dataset, context="Prod dataset")
+        # Train the production model on the full dataset
+        prod_model = XGBClassifier(**best_params)
+        prod_model.fit(X_full, y_full)
+
+        # Infer the model signature and log the production model to MLFlow
+        input_example = X_test.iloc[:5] 
+        model_predictions = prod_model.predict(input_example)
+        signature = infer_signature(input_example, model_predictions)
+        mlflow.xgboost.log_model(xgb_model=prod_model, artifact_path=mlflow_prod_model_filepath, model_format='json', signature=signature)
+        
+        logger.info("Production model trained and logged to MLFlow.")
+
+        # Generate and save the feature importance visualization
+        save_path = os.path.join(params['predictions_dir'], params['model_type'], "prod_feature_importance.png")
+        generate_feature_importance_visualization(prod_model, list(X_full.columns), save_path)
+
+
+def full_dataset_training(X_train: DataFrame, y_train: np.ndarray, X_test: DataFrame, y_test: np.ndarray, 
+                   best_params: Dict[str, Any], params: Dict[str, Any]) -> None:
+    """
+    Conducts the training of the XGB model using the best parameters obtained from hyperparameter optimization.
 
     Args:
     - X_train (DataFrame): The training features.
     - y_train (np.ndarray): The training target.
     - X_test (DataFrame): The testing features.
     - y_test (np.ndarray): The testing target.
-    - best_params (dict): The best parameters obtained from hyperparameter optimization.
-    - params (dict): The parameters for the model.
+    - best_params (Dict[str, Any]): The best parameters obtained from hyperparameter optimization.
+    - params (Dict[str, Any]): Dictionary containing the parameters for the model, including 'model_type', 
+                               'label_encoder', 'MLflow_config', 'predictions_dir', 'target_column', etc.
 
     Returns:
     - None
@@ -90,47 +151,8 @@ def final_training(X_train, y_train, X_test, y_test, best_params, params):
 
         mlflow.end_run()
         
-        # Additional flag to control production model training
         if params.get('train_prod_model', False):
-            with mlflow.start_run(run_name=params['MLflow_config']['run_names']['prod_training'], nested=True):
-
-                logger.info("Training production model")
-
-                X_train = X_train.drop(columns=['filename', 'frame_number'], errors='ignore')
-                X_test = X_test.drop(columns=['filename', 'frame_number'], errors='ignore')
-                # Combine the training and testing datasets to form the full dataset
-                X_full = pd.concat([X_train, X_test])
-                y_full = pd.concat([y_train, y_test])
-
-                mlflow.log_params(best_params)
-
-                # Log dataset information
-                mlflow.log_param('num_samples', len(X_full))
-                mlflow.log_param('num_features', X_full.shape[1])
-                prod_dataset: PandasDataset = mlflow.data.from_pandas(pd.concat([X_full,y_full],axis=1), targets=params['target_column'], name="Prod Dataset")
-                mlflow.log_input(prod_dataset, context="Prod dataset")
-                # Train the production model on the full dataset
-                prod_model = XGBClassifier(**best_params)
-                prod_model.fit(X_full, y_full)
-
-                # Define the directory structure for the production model
-                prod_models_dir = 'models/prod'
-                prod_model_dir = os.path.join(prod_models_dir, model_type)
-                os.makedirs(prod_model_dir, exist_ok=True)
-                
-                # Define the filepath for MLflow logging
-                mlflow_prod_model_filepath = os.path.join(prod_model_dir, model_type)
-                
-                # Infer the model signature and log the production model to MLFlow
-                input_example = X_test.iloc[:5] 
-                model_predictions = prod_model.predict(input_example)
-                signature = infer_signature(input_example, model_predictions)
-                mlflow.xgboost.log_model(xgb_model=prod_model, artifact_path=mlflow_prod_model_filepath, model_format='json', signature=signature)
-                logger.info("Production model trained and logged to MLFlow.")
-
-                # Generate and save the feature importance visualization
-                save_path = os.path.join(params['predictions_dir'], params['model_type'], "prod_feature_importance.png")
-                generate_feature_importance_visualization(prod_model, list(X_full.columns), save_path)
+            train_production_model(X_train, X_test, y_train, y_test, best_params, params)
 
 
 def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_test: np.ndarray, 
@@ -145,13 +167,13 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_tes
     - params (dict): The parameters for the model.
 
     Returns:
-    - model (XGBClassifier): The trained XGB model.
+    - None
     """
     
     optimize_hyperparams = params.pop('optimize_hyperparams', False)
-    weights = get_class_weights(params['label_encoder'])
-    logger.info(f"using class weights: {weights}")
-    sample_weights = np.array([weights[label] for label in y_train])
+    #weights = get_class_weights(params['label_encoder'])
+    #logger.info(f"using class weights: {weights}")
+    # sample_weights = np.array([weights[label] for label in y_train])
 
     def objective(trial):
 
@@ -165,9 +187,7 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_tes
             'enable_categorical' : True,
             'tree_method': 'hist' # best for 'medium' sized datasets (also only hist and approx work with categorical features)
         }
-        
-        model = XGBClassifier(**param)
- 
+         
         with mlflow.start_run(run_name=f'Trial_{trial.number}', nested=True):  
             score_metric = params.get('score_metric', 'accuracy')  # Defaulting to accuracy if score_metric isn't provided
             mlflow.log_param("score_metric", score_metric)  
@@ -184,9 +204,16 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_tes
 
         logger.info("Optimizing hyperparameters")
         study = optuna.create_study(direction='maximize')
-
+    
+        models_dir = 'models/dev'
+        model_dir = os.path.join(models_dir, 'xgb')
+        os.makedirs(model_dir, exist_ok=True)
+        
         with mlflow.start_run(run_name=params['MLflow_config']['run_names']['hyperparameter_optimization'], nested=True):
             study.optimize(objective, n_trials=params['num_trials'])
+            study_file_path = os.path.join(model_dir, 'optuna_study.pkl')
+            joblib.dump(study, study_file_path)
+            mlflow.log_artifact(study_file_path)
 
         best_params = study.best_params
         logger.info(f"Best hyperparameters found: {best_params}")
@@ -199,15 +226,12 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_tes
         
         # Merge fixed parameters with the optimized parameters
         best_params.update(fixed_params)
-        # Save the best hyperparameters
-        models_dir = 'models/dev'
-        model_dir = os.path.join(models_dir, 'xgb')
-        os.makedirs(model_dir, exist_ok=True)
+  
         with open(os.path.join(model_dir, 'best_hyperparameters.json'), 'w') as f:
             json.dump(best_params, f)
 
         logger.info("Training with optimized hyperparameters")
-        final_training(X_train, y_train, X_test, y_test, best_params, params)
+        full_dataset_training(X_train, y_train, X_test, y_test, best_params, params)
 
 
     else:
@@ -217,5 +241,5 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_tes
             'tree_method': 'hist',
             'enable_categorical': True
         }
-        final_training(X_train, y_train, X_test, y_test, default_params, params)
+        full_dataset_training(X_train, y_train, X_test, y_test, default_params, params)
     
