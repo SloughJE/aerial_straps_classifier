@@ -13,8 +13,8 @@ from .evaluation_metrics import (
     generate_pr_curves_and_save,
 )
 
-def predict_and_evaluate(model: BaseEstimator, X_train: DataFrame, y_train: DataFrame, 
-                         X_test: DataFrame, y_test: DataFrame,
+def predict_and_evaluate(model: BaseEstimator, X_train: DataFrame, y_train: pd.Series, 
+                         X_test: DataFrame, y_test: pd.Series,
                          params: Dict[str, Any]) -> Tuple[float, float]:
   
     """
@@ -36,7 +36,7 @@ def predict_and_evaluate(model: BaseEstimator, X_train: DataFrame, y_train: Data
     model_type = params['model_type']
 
     # Helper function to predict, evaluate, and save predictions
-    def predict_and_save(model: BaseEstimator, X: DataFrame, y: DataFrame, 
+    def predict_and_save(model: BaseEstimator, X: DataFrame, y: pd.Series, 
                         params: Dict[str, Any], data_type: str) -> float:
         """
         Predicts, evaluates, and saves the predictions of the model on the provided data.
