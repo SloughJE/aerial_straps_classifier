@@ -32,7 +32,7 @@ def get_class_weights(le: LabelEncoder) -> dict:
     return weights
 
 
-def optimize_hyperparams_optune(X_train: DataFrame, y_train: np.ndarray, 
+def optimize_hyperparams_optune(X_train: DataFrame, y_train: pd.Series, 
                  params: Dict[str, Any]) -> None:
     
     """
@@ -40,7 +40,7 @@ def optimize_hyperparams_optune(X_train: DataFrame, y_train: np.ndarray,
 
     Args:
     - X_train (DataFrame): The training features.
-    - y_train (np.ndarray): The training target.
+    - y_train (pd.Series): The training target.
     - params (Dict[str, Any]): Dictionary containing the parameters for the model, including 'model_type', 'MLflow_config', 'predictions_dir', etc.
 
     Returns:
@@ -103,15 +103,16 @@ def optimize_hyperparams_optune(X_train: DataFrame, y_train: np.ndarray,
     return best_params
 
 
-def train_production_model(X_train: DataFrame, X_test: DataFrame, y_train: np.ndarray, y_test: np.ndarray, best_params: Dict[str, Any], params: Dict[str, Any]) -> None:
+def train_production_model(X_train: DataFrame, X_test: DataFrame, y_train: pd.Series, 
+                           y_test: pd.Series, best_params: Dict[str, Any], params: Dict[str, Any]) -> None:
     """
     Trains the production model using the full dataset and logs the details to MLFlow.
 
     Args:
     - X_train (DataFrame): The training features.
     - X_test (DataFrame): The testing features.
-    - y_train (np.ndarray): The training target.
-    - y_test (np.ndarray): The testing target.
+    - y_train (pd.Series): The training target.
+    - y_test (pd.Series): The testing target.
     - best_params (Dict[str, Any]): The best parameters obtained from hyperparameter optimization.
     - params (Dict[str, Any]): Dictionary containing the parameters for the model, including 'model_type', 'MLflow_config', 'predictions_dir', etc.
 
@@ -164,16 +165,16 @@ def train_production_model(X_train: DataFrame, X_test: DataFrame, y_train: np.nd
         generate_feature_importance_visualization(prod_model, list(X_full.columns), save_path)
 
 
-def full_train_dataset_training(X_train: DataFrame, y_train: np.ndarray, X_test: DataFrame, y_test: np.ndarray, 
+def full_train_dataset_training(X_train: DataFrame, y_train: pd.Series, X_test: DataFrame, y_test: pd.Series, 
                    best_params: Dict[str, Any], params: Dict[str, Any]) -> None:
     """
     Conducts the training of the XGB model using the best parameters obtained from hyperparameter optimization.
 
     Args:
     - X_train (DataFrame): The training features.
-    - y_train (np.ndarray): The training target.
+    - y_train (pd.Series): The training target.
     - X_test (DataFrame): The testing features.
-    - y_test (np.ndarray): The testing target.
+    - y_test (pd.Series): The testing target.
     - best_params (Dict[str, Any]): The best parameters obtained from hyperparameter optimization.
     - params (Dict[str, Any]): Dictionary containing the parameters for the model, including 'model_type', 
                                'label_encoder', 'MLflow_config', 'predictions_dir', 'target_column', etc.
@@ -225,22 +226,21 @@ def full_train_dataset_training(X_train: DataFrame, y_train: np.ndarray, X_test:
         #mlflow.end_run()
 
 
-def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_test: np.ndarray, 
-              groups: np.ndarray, params: Dict[str, Any]) -> None:
+def train_xgb(X_train: DataFrame, y_train: pd.Series, X_test: DataFrame, y_test: pd.Series, 
+              groups: pd.Series, params: Dict[str, Any]) -> None:
     """
-    Trains an XGBClassifier with optional hyperparameter optimization.
+    Trains an XGBClassifier. Optional hyperparameter optimization.
     Also trains a prod model optionally. 
 
     Args:
     - X_train (DataFrame): The training features.
-    - y_train (np.ndarray): The training target.
-    - groups (np.ndarray): The groups for the training data.
+    - y_train (pd.Series): The training target.
+    - groups (pd.Series): The groups for the training data.
     - params (dict): The parameters for the model.
 
     Returns:
     - None
     """   
-
 
     optimize_hyperparams = params.pop('optimize_hyperparams', False)
     #weights = get_class_weights(params['label_encoder'])
