@@ -32,6 +32,77 @@ def get_class_weights(le: LabelEncoder) -> dict:
     return weights
 
 
+def optimize_hyperparams_optune(X_train: DataFrame, y_train: np.ndarray, 
+                 params: Dict[str, Any]) -> None:
+    
+    """
+    Optimizes hyperparameters using Optune, logs the details to MLFlow.
+
+    Args:
+    - X_train (DataFrame): The training features.
+    - y_train (np.ndarray): The training target.
+    - params (Dict[str, Any]): Dictionary containing the parameters for the model, including 'model_type', 'MLflow_config', 'predictions_dir', etc.
+
+    Returns:
+    - best_params (Dict[str, Any]): The best parameters obtained from hyperparameter optimization.
+    """
+
+    def objective(trial):
+
+        param = {
+            'n_estimators': trial.suggest_int('n_estimators', 50, 1000),
+            'max_depth': trial.suggest_int('max_depth', 1, 20),
+            'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3),
+            'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
+            'subsample': trial.suggest_float('subsample', 0.5, 1),
+            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
+            'enable_categorical' : True,
+            'tree_method': 'hist' # best for 'medium' sized datasets (also only hist and approx work with categorical features)
+        }
+         
+        with mlflow.start_run(run_name=f'Trial_{trial.number}', nested=True):  
+            score_metric = params.get('score_metric', 'accuracy')  # Defaulting to accuracy if score_metric isn't provided
+            mlflow.log_param("score_metric", score_metric)  
+
+            model = XGBClassifier(**param)
+            score = cross_val_score(model, X_train, y_train, cv=5, scoring=score_metric).mean()
+
+            mlflow.log_params(param)  
+            mlflow.log_metric(f"cross_val_score_{score_metric}", score)  
+
+        return score
+
+    with mlflow.start_run(run_name=params['MLflow_config']['run_names']['hyperparameter_optimization'], nested=True):
+
+        logger.info("Optimizing hyperparameters")
+        study = optuna.create_study(direction='maximize')
+    
+        models_dir = 'models/dev'
+        model_dir = os.path.join(models_dir, 'xgb')
+        os.makedirs(model_dir, exist_ok=True)
+    
+        study.optimize(objective, n_trials=params['num_trials'])
+        study_file_path = os.path.join(model_dir, 'optuna_study.pkl')
+        joblib.dump(study, study_file_path)
+        mlflow.log_artifact(study_file_path)
+
+    best_params = study.best_params
+    logger.info(f"Best hyperparameters found: {best_params}")
+    
+    # add back the fixed params
+    fixed_params = {
+        'tree_method': 'hist',
+        'enable_categorical': True
+        }
+    
+    # Merge fixed parameters with the optimized parameters
+    best_params.update(fixed_params)
+    with open(os.path.join(model_dir, 'best_hyperparameters.json'), 'w') as f:
+        json.dump(best_params, f)
+
+    return best_params
+
+
 def train_production_model(X_train: DataFrame, X_test: DataFrame, y_train: np.ndarray, y_test: np.ndarray, best_params: Dict[str, Any], params: Dict[str, Any]) -> None:
     """
     Trains the production model using the full dataset and logs the details to MLFlow.
@@ -176,66 +247,12 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_tes
     #logger.info(f"using class weights: {weights}")
     # sample_weights = np.array([weights[label] for label in y_train])
 
-    def objective(trial):
-
-        param = {
-            'n_estimators': trial.suggest_int('n_estimators', 50, 1000),
-            'max_depth': trial.suggest_int('max_depth', 1, 20),
-            'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3),
-            'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
-            'subsample': trial.suggest_float('subsample', 0.5, 1),
-            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
-            'enable_categorical' : True,
-            'tree_method': 'hist' # best for 'medium' sized datasets (also only hist and approx work with categorical features)
-        }
-         
-        with mlflow.start_run(run_name=f'Trial_{trial.number}', nested=True):  
-            score_metric = params.get('score_metric', 'accuracy')  # Defaulting to accuracy if score_metric isn't provided
-            mlflow.log_param("score_metric", score_metric)  
-
-            model = XGBClassifier(**param)
-            score = cross_val_score(model, X_train, y_train, cv=5, scoring=score_metric).mean()
-
-            mlflow.log_params(param)  
-            mlflow.log_metric(f"cross_val_score_{score_metric}", score)  
-
-        return score
-
     # Define a variable to hold the parameters to be used for training
     training_params = None
 
     if optimize_hyperparams:
 
-        with mlflow.start_run(run_name=params['MLflow_config']['run_names']['hyperparameter_optimization'], nested=True):
-
-            logger.info("Optimizing hyperparameters")
-            study = optuna.create_study(direction='maximize')
-        
-            models_dir = 'models/dev'
-            model_dir = os.path.join(models_dir, 'xgb')
-            os.makedirs(model_dir, exist_ok=True)
-        
-            study.optimize(objective, n_trials=params['num_trials'])
-            study_file_path = os.path.join(model_dir, 'optuna_study.pkl')
-            joblib.dump(study, study_file_path)
-            mlflow.log_artifact(study_file_path)
-
-        best_params = study.best_params
-        logger.info(f"Best hyperparameters found: {best_params}")
-        
-        # add back the fixed params
-        fixed_params = {
-            'tree_method': 'hist',
-            'enable_categorical': True
-            }
-        
-        # Merge fixed parameters with the optimized parameters
-        best_params.update(fixed_params)
-        with open(os.path.join(model_dir, 'best_hyperparameters.json'), 'w') as f:
-            json.dump(best_params, f)
-
-        training_params = best_params
-
+        training_params = optimize_hyperparams_optune(X_train, y_train, params)
         logger.info("Training with optimized hyperparameters")
         full_train_dataset_training(X_train, y_train, X_test, y_test, training_params, params)
 
@@ -249,6 +266,6 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_tes
         training_params = default_params
         full_train_dataset_training(X_train, y_train, X_test, y_test, training_params, params)
 
-
     if params.get('train_prod_model', False):
         train_production_model(X_train, X_test, y_train, y_test, training_params, params)
+

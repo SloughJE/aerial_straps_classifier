@@ -44,10 +44,10 @@ model_training:
   MLflow_config:
     experiment_name: "test_XGB_Optimization_and_Training"
     run_names:
-      main: "Dev_Pipeline_Run"
+      main: "Main_Pipeline_Run"
       hyperparameter_optimization: "Hyperparameter_Optimization"
       final_training: "Retrain_on_Train_Dataset"
-      prod_training: "Production_Model_FULL_Dataset"
+      prod_training: "Prod_Model_FULL_Dataset_Train"
   model_type: xgb
   final_features_filepath: data/processed/features/final_features.csv
   test_size: 0.2
