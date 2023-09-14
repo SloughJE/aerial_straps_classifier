@@ -1,22 +1,22 @@
-import logging
 import json
+import logging
 import os
 from typing import Any, Dict
-import joblib
 
+import joblib
 import mlflow
 import numpy as np
 import optuna
 import pandas as pd
-from pandas import DataFrame
+from mlflow.data.pandas_dataset import PandasDataset
 from mlflow.models.signature import infer_signature
+from pandas import DataFrame
 from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier
-from mlflow.data.pandas_dataset import PandasDataset
 
-from .utils import predict_and_evaluate
 from .evaluation_metrics import generate_feature_importance_visualization
+from .utils import predict_and_evaluate
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +91,7 @@ def train_production_model(X_train: DataFrame, X_test: DataFrame, y_train: np.nd
         generate_feature_importance_visualization(prod_model, list(X_full.columns), save_path)
 
 
-def full_dataset_training(X_train: DataFrame, y_train: np.ndarray, X_test: DataFrame, y_test: np.ndarray, 
+def full_train_dataset_training(X_train: DataFrame, y_train: np.ndarray, X_test: DataFrame, y_test: np.ndarray, 
                    best_params: Dict[str, Any], params: Dict[str, Any]) -> None:
     """
     Conducts the training of the XGB model using the best parameters obtained from hyperparameter optimization.
@@ -150,15 +150,13 @@ def full_dataset_training(X_train: DataFrame, y_train: np.ndarray, X_test: DataF
         generate_feature_importance_visualization(model, list(X_train.columns), save_path)
 
         mlflow.end_run()
-        
-        if params.get('train_prod_model', False):
-            train_production_model(X_train, X_test, y_train, y_test, best_params, params)
 
 
 def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_test: np.ndarray, 
-              groups: np.ndarray, params: Dict[str, Any]) -> XGBClassifier:
+              groups: np.ndarray, params: Dict[str, Any]) -> None:
     """
     Trains an XGBClassifier with optional hyperparameter optimization.
+    Also trains a prod model optionally. 
 
     Args:
     - X_train (DataFrame): The training features.
@@ -168,8 +166,9 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_tes
 
     Returns:
     - None
-    """
-    
+    """   
+
+
     optimize_hyperparams = params.pop('optimize_hyperparams', False)
     #weights = get_class_weights(params['label_encoder'])
     #logger.info(f"using class weights: {weights}")
@@ -200,6 +199,9 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_tes
 
         return score
 
+    # Define a variable to hold the parameters to be used for training
+    training_params = None
+
     if optimize_hyperparams:
 
         logger.info("Optimizing hyperparameters")
@@ -226,13 +228,13 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_tes
         
         # Merge fixed parameters with the optimized parameters
         best_params.update(fixed_params)
-  
         with open(os.path.join(model_dir, 'best_hyperparameters.json'), 'w') as f:
             json.dump(best_params, f)
 
-        logger.info("Training with optimized hyperparameters")
-        full_dataset_training(X_train, y_train, X_test, y_test, best_params, params)
+        training_params = best_params
 
+        logger.info("Training with optimized hyperparameters")
+        full_train_dataset_training(X_train, y_train, X_test, y_test, training_params, params)
 
     else:
 
@@ -241,5 +243,9 @@ def train_xgb(X_train: DataFrame, y_train: np.ndarray, X_test: np.ndarray, y_tes
             'tree_method': 'hist',
             'enable_categorical': True
         }
-        full_dataset_training(X_train, y_train, X_test, y_test, default_params, params)
-    
+        training_params = default_params
+        full_train_dataset_training(X_train, y_train, X_test, y_test, training_params, params)
+
+
+    if params.get('train_prod_model', False):
+        train_production_model(X_train, X_test, y_train, y_test, training_params, params)
