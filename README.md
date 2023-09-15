@@ -349,9 +349,14 @@ graph TD;
    AG --> AK[Train Production Model];
    AK --> AL["Output: models/prod/xgb/"]; 
    AL --> AH; 
-```
 
-# Usage Sequence
+
+
+
+```
+<br><br>
+
+# Pipeline Usage Sequence
 
 ### 1. Media Processing
 #### 1.1 Process Videos
