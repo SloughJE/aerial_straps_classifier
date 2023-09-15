@@ -192,14 +192,164 @@ Ensure the labeled data is consistent and matches the filenames and frame number
 
 ## 6. Model Training and Evaluation
 
-This code provides functionalities for training, evaluating, and saving machine learning models for the image analysis task. The main components include:
+This section provides functionalities for training, evaluating, and saving machine learning models for the image analysis task. The main components include:
+
+#### **XGBoost for Model Training**
+
+In the initial stages of this project, there was a provision to incorporate multiple machine learning models for experimentation, as seen in the `MODEL_MAPPER` configuration. However, as the project evolved, the focus narrowed down to exclusively utilizing [XGBoost](https://xgboost.readthedocs.io/en/stable/). XGBoost, or eXtreme Gradient Boosting, is an implementation of gradient boosted decision trees designed for speed and performance. This ensemble method builds multiple decision trees and merges them together to get a more accurate and robust model.
+
+The choice of XGBoost was influenced by several factors. Firstly, despite the origin of the data being images, the features utilized for training are extracted and presented in a tabular format. XGBoost has consistently demonstrated superior performance on tabular data compared to other machine learning models. Secondly, XGBoost can handle categorical variables natively, eliminating the need for preprocessing steps such as one-hot encoding, which would be necessary for other algorithms. This is particularly beneficial in managing the spatial features in this dataset. Additionally, XGBoost is known for its speed and performance, which is critical in the iterative process of model training and hyperparameter optimization.
+
+While the current implementation focuses on XGBoost, the `MODEL_MAPPER` configuration retains the flexibility to integrate additional models in the future, should there be a need to explore other machine learning algorithms. Given these advantages, XGBoost was the chosen algorithm for this project, aligning well with the data characteristics and project requirements, while also leaving room for potential expansions in the future.
+
 
 ### 6.1 **Model Training Pipeline**
-The `train_model` function manages the process of splitting data, encoding labels, training the classifier, and saving the trained model.
+
+In this phase of the pipeline, we focus on training the XGBoost classifier to identify different aerial straps poses from the processed features of the input images. The pipeline is structured to offer flexibility and efficiency in the training process, leveraging MLflow for experiment tracking and Optuna for hyperparameter optimization. 
+
+#### **Train Model Function**
+
+The `train_model` script is central to this phase, orchestrating the entire training process. It utilizes the parameters in the `model_training ` section of the `params.yaml` file to control various aspects of the training process, including whether to optimize hyperparameters and whether to train a production model on the full dataset.
+
+#### **MLflow Integration**
+
+Our pipeline integrates [MLflow](https://mlflow.org/docs/latest/index.html), a platform developed by Databricks to streamline the machine learning lifecycle, including experimentation, reproducibility, and deployment. This integration is pivotal in managing and tracking the experiments conducted during the model training process. Here are the key features of this integration:
+
+- **Experiment and Run Naming**: MLflow organizes experiments by names and allows for individual runs to be named, aiding in the identification and segregation of different stages of the model training process.
+- **Parameter and Metric Logging**: All parameters utilized during the training are logged, providing a detailed record of the settings used in each run. Similarly, the chosen metric for hyperparameter optimization, as well as other evaluation metrics, are logged for each run, facilitating performance tracking and comparison.
+- **Artifact Logging**: Artifacts such as Optuna study objects and trained models are logged, offering a structured storage solution for important outputs.
+- **Nested Runs**: The pipeline supports nested runs, allowing for a hierarchical organization of the hyperparameter optimization runs within the main run, enhancing the clarity and organization of the experiments.
+- **Reproducibility**: MLflow automatically logs the Python environment and the Git commit hash, ensuring full reproducibility of each run. It also aids in packaging the code into a reproducible run environment, making it easier to share with other data scientists or transfer to production.
+
+#### **Optuna for Hyperparameter Optimization**
+
+When the `optimize_hyperparams` parameter is set to True in the `params.yaml` file, the pipeline leverages [Optuna](https://optuna.readthedocs.io/en/stable/), an n open-source  hyperparameter optimization software framework known for its efficiency and performance in finding the optimal hyperparameters for machine learning models.
+
+By default, Optuna employs a Bayesian optimization algorithm known as Tree-Structured Parzen Estimator (TPE) to perform hyperparameter optimization. However, it supports a variety of other optimization algorithms, offering flexibility in the optimization process. In our pipeline, we stick to the default TPE algorithm for optimization. The strategies employed by Optuna are broadly categorized into two:
+
+1. Sampling Strategy: This strategy is focused on selecting the best parameter combinations by concentrating on areas where hyperparameters yield better results. The TPE algorithm, which is part of this strategy, works iteratively to find the hyperparameters that maximize the chosen metric, specified in the score_metric parameter in the `params.yaml` file.
+2. Pruning Strategy: This strategy leverages early stopping techniques to halt less promising trials early, thereby saving computational resources and time. It includes methods such as Asynchronous Successive Halving, which promotes the most promising trials to undergo more training epochs.
+
+Optuna integrates seamlessly with MLflow, logging details of the optimization process and each trial in the MLflow UI. This not only ensures the optimal performance of the model but also offers detailed insights into how different hyperparameters influence the model's performance, fostering a deeper understanding and fine-tuning capability.
+
+The number of trials in the optimization is controlled by the `num_trials` parameter, and the best parameters found are used to train the final model, ensuring an efficient and optimized model training process. This approach ensures a balance between computational efficiency and model performance, finding the best hyperparameters in a structured and automated manner.
+
+#### **Production Model Training**
+
+The production model training is a crucial step in preparing the model for real-world applications, ensuring it delivers the best performance when deployed. This is facilitated by setting the `train_prod_model` parameter to `True`, instructing the pipeline to train a production model using the entire dataset available, inclusive of the optimized hyperparameters if the optimization process was enabled.
+
+This production model training is executed as a separate run nested under the `Main_Pipeline_Run`, leveraging the full extent of the data to guarantee the highest level of performance. The detailed steps to register and manage this production model through MLflow are as follows:
+
+1. **Access the MLflow UI**: Start by navigating to the specific run in the MLflow UI where the production model was trained.
+   
+2. **Locate the Model**: Within the run details, find the production model under the "Artifacts" tab.
+
+3. **Register the Model**: Click on "Register Model" to initiate the registration of the model in the MLflow Model Registry.
+
+4. **Manage Model Versions and Stages**: Post registration, the MLflow Model Registry allows for detailed management of the model versions. You can annotate different versions with descriptions, transition them through various stages such as Staging and Production, and archive them when necessary.
+
+5. **Deployment**: Once the model is registered and properly annotated, it is ready for deployment. MLflow supports deployment across various platforms, ensuring a smooth transition from development to production.
+
+By following this structured approach, you not only ensure that your model is trained with the best possible configuration but also facilitate a streamlined process for moving from model training to deployment, with detailed tracking and management through the MLflow UI. This ensures readiness for real-world applications, with the highest level of performance backed by a comprehensive training and optimization process.
+
+#### **Parameters**
+
+The parameters in the `params.yaml` file offer control over various aspects of the training pipeline, including:
+
+- **MLflow Configuration**: Setting the experiment name and defining different run names for various stages of the training process.
+- **Model Type**: Specifying the type of model to train (`xgb` in this case).
+- **Data Filepath**: Defining the path to the CSV file containing the final features used for training.
+- **Test Size**: Setting the fraction of the data to be used as the test set during the training-validation split.
+- **Target Column**: Specifying the column in the dataset that contains the target labels.
+- **Predictions Directory**: Setting the directory where the predictions will be saved.
+- **Hyperparameter Optimization**: Controlling whether to perform hyperparameter optimization and setting the number of trials for optimization.
+- **Score Metric**: Defining the metric to guide the hyperparameter optimization process.
+- **Production Model Training**: Controlling whether to train a production model on the full dataset.
+
+By adjusting these parameters, you can tailor the training process to meet specific requirements and experiment with different settings to find the most effective approach.
 
 ### 6.2 **Generating Evaluation Metrics**
-Functions such as `generate_roc_curves_and_save`, `generate_pr_curves_and_save`, `generate_visualizations_and_save_metrics`, and `generate_feature_importance_visualization` are used to generate evaluation metrics and visualizations for the trained models.
 
+Post training, the pipeline offers functionalities to generate a comprehensive set of evaluation metrics and visualizations to assess the performance of the trained models. These metrics and visualizations are logged as MLFlow artifacts, ensuring they are easily accessible and well-documented for each run. The key functions involved in this process include:
+
+#### **ROC Curves**
+The `generate_roc_curves_and_save` function plots and saves ROC (Receiver Operating Characteristic) curves for each class in a multiclass setting. It calculates the false positive rate and true positive rate for each class, and plots them, providing a visualization of the performance of the model for each class. The area under the curve (AUC) for each class is also calculated and logged as an MLFlow metric, providing a quantitative measure of the model's performance.
+
+#### **Precision-Recall Curves**
+Utilizing the `generate_pr_curves_and_save` function, precision-recall curves are plotted and saved for each class, offering a visualization of the trade-off between precision and recall for different threshold values, again in a multiclass setting. The area under each curve is calculated, providing a single metric that summarizes the curve.
+
+#### **Visualizations and Metrics**
+The `generate_visualizations_and_save_metrics` function creates a variety of visualizations and saves metrics to aid in the evaluation process. This includes generating a confusion matrix to visualize the performance of the model across different classes, and creating a classification report that contains key metrics such as precision, recall, and F1-score for each class. These metrics are logged individually in MLFlow, allowing for detailed tracking of the model's performance across different classes.
+
+#### **Feature Importance Visualization**
+The `generate_feature_importance_visualization` function is employed to visualize and understand the importance of different features in the dataset. It creates a bar chart that displays the features ranked by their importance, as determined by the model. This visualization is saved and logged as an MLFlow artifact, providing insights into which features are most influential in the predictions made by the model.
+
+These visualizations, along with various metrics, are logged as artifacts in MLFlow, ensuring a detailed record of the evaluation process is maintained and can be easily accessed and reviewed through the MLFlow UI.
+
+# Project Flow Diagram
+```mermaid
+graph TD;
+   A[Start] --> B{Process Media};
+   B -->|Videos| C[Process Videos];
+   B -->|Photos| D[Process Photos];
+   
+   C --> E["Input: data/raw/original/"];
+   E --> F["Output: data/interim/reduced/"];
+   
+   D --> G["Input: data/raw/photos/"];
+   G --> H["Output: data/interim/photos/"];
+   
+   F --> I{Label Media};
+   H --> I;
+   I -->|Videos| J[Label Videos];
+   I -->|Photos| K[Label Photos];
+   
+   J --> M["Input: data/interim/reduced/"];
+   M --> N["Output: data/interim/labeled/"];
+   
+   K --> O["Input: data/interim/photos/"];
+   O --> P["Output: data/interim/labeled/"];
+   
+   N --> Q{Apply Labels to Mirrored Media};
+   P --> Q;
+   Q --> L[Apply Mirror Labels];
+   
+   L --> R{Extract Landmarks};
+   R -->|Videos| S[Extract Landmarks for Videos];
+   R -->|Photos| T[Extract Landmarks for Photos];
+   
+   S --> V["Input: data/interim/reduced/"];
+   V --> W["Output: data/processed/videos/"];
+   
+   T --> X["Input: data/interim/photos/"];
+   X --> Y["Output: data/processed/photos/"];
+   
+   W --> Z{Create Features};
+   Y --> Z;
+   Z --> U[Extract Features from Landmarks];
+   
+   U --> AB{Combine Features};
+   AB --> AC[Combine CSV Files];
+    
+   AC --> AD{Model Training};
+   AD --> AE[Train Model Pipeline];
+   
+   AE --> AF["Input: data/processed/features/final_features.csv"];
+   AF --> AG["Output: models/dev/xgb/"]; 
+   AF --> AH["MLflow: Experiment Tracking"]; 
+   
+   AG --> AI[Optuna: Hyperparameter Optimization];
+   AI --> AH; 
+   
+   AG --> AJ[Generate Metrics/Visualizations];
+   AJ --> AM["Output: data/results/"]; 
+   
+   AM --> AH; 
+   
+   AG --> AK[Train Production Model];
+   AK --> AL["Output: models/prod/xgb/"]; 
+   AL --> AH; 
+```
 
 # Usage Sequence
 
