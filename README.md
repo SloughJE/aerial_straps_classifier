@@ -173,7 +173,7 @@ This step creates joint angle features, calculating various joint angles such as
 Subsequently, the extract_angles function utilizes calculate_2d_angle to determine several specified angles, with landmarks predefined for each angle (e.g., the left elbow angle is defined by the landmarks 'LEFT_SHOULDER', 'LEFT_ELBOW', and 'LEFT_WRIST'). 
 
 #### Spatial Features
-To create 'spatial features', we calculate the relative vertical positions of various pairs of body landmarks using their y-coordinates. In other words, is the left foot above the left hip.
+To create 'spatial features', we calculate the relative vertical positions of various pairs of body landmarks using their y-coordinates. In other words, is the left foot above, below or level with the left hip.
 
 A critical aspect of this function is defining a margin of error when determining the spatial relation. Currently we use 'above','below' or 'level' to characterize the spatial relationship. A margin of error is necessary to realistically categorize the relationship as 'level'. We clearly cannot assume that the hips must be exactly the same y coordinate as the shoulders to be considered 'level' with each other. This magin was established through manual analysis of several photos and videos alongside the data. It's important to note that the chosen margin might not be fully generalizable, and adjustments may be needed based on the specific characteristics of other datasets. It was determined not to be feasible to create any sort of relative margin. However, we do currently define a different margin for the head to shoulder relationship, as it is consistently significantly smaller than the other relationships.
 
