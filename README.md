@@ -221,6 +221,24 @@ Our pipeline integrates [MLflow](https://mlflow.org/docs/latest/index.html), a p
 - **Nested Runs**: The pipeline supports nested runs, allowing for a hierarchical organization of the hyperparameter optimization runs within the main run, enhancing the clarity and organization of the experiments.
 - **Reproducibility**: MLflow automatically logs the Python environment and the Git commit hash, ensuring full reproducibility of each run. It also aids in packaging the code into a reproducible run environment, making it easier to share with other data scientists or transfer to production.
 
+#### MLflow Dashboard
+
+MLflow UI allows the user to view the results of experiments and any associated metrics and artifacts. Refer to the [docs](https://mlflow.org/docs/latest/quickstart.html#view-mlflow-runs-and-experiments) for more information.
+
+To launch the dashboard, use the command below:
+
+```sh
+mlflow ui
+```
+
+
+Example MLflowdashboard:
+| ![Example MLflow Dashboard](assets/images/mlflow_dashboard.png) | 
+|:--:| 
+| *Example MLflow Dashboard* |
+
+
+
 #### **Optuna for Hyperparameter Optimization**
 
 When the `optimize_hyperparams` parameter is set to True in the `params.yaml` file, the pipeline leverages [Optuna](https://optuna.readthedocs.io/en/stable/), an n open-source  hyperparameter optimization software framework known for its efficiency and performance in finding the optimal hyperparameters for machine learning models.
@@ -233,6 +251,32 @@ By default, Optuna employs a Bayesian optimization algorithm known as Tree-Struc
 Optuna integrates seamlessly with MLflow, logging details of the optimization process and each trial in the MLflow UI. This not only ensures the optimal performance of the model but also offers detailed insights into how different hyperparameters influence the model's performance, fostering a deeper understanding and fine-tuning capability.
 
 The number of trials in the optimization is controlled by the `num_trials` parameter, and the best parameters found are used to train the final model, ensuring an efficient and optimized model training process. This approach ensures a balance between computational efficiency and model performance, finding the best hyperparameters in a structured and automated manner.
+
+#### **Optuna Dashboard for Visualization**
+
+Optuna also offers a dashboard for a more interactive and visual analysis of the optimization process. The dashboard provides a detailed view of the optimization history, illustrating the influence and relationships of hyperparameters, among other insights.
+
+To launch the dashboard, use the command below, specifying the database where your Optuna study data is stored:
+
+```sh
+optuna-dashboard sqlite:///models/dev/xgb/optuna_study.db
+```
+
+Some of the features you can explore with the Optuna dashboard:
+
+- **Optimization History**: A graphical representation of the optimization process, helping you visualize the trajectory of the trials over time.
+- **Hyperparameter Importances**: A detailed view of the hyperparameters and their respective importances, aiding in understanding which hyperparameters are more influential in optimizing the model's performance.
+- **Hyperparameter Relationships**: Insights into how different hyperparameters relate to each other and their collective impact on the model's performance.
+
+An example of the Optuna Dashboard is shown below:
+
+| ![Example Optuna Dashboard](assets/images/optuna_dashboard.png) | 
+|:--:| 
+| *Example Optuna Dashboard* |
+
+
+
+For a more detailed walkthrough of the visualization features available, refer to the Optuna tutorial on visualization in their [official documentation](https://optuna.readthedocs.io/en/stable/reference/visualization/index.html). The dashboard is an excellent tool for gaining a deeper understanding of the optimization process, facilitating fine-tuning and achieving better model performance.
 
 #### **Production Model Training**
 

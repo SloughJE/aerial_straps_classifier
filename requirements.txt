@@ -13,3 +13,4 @@ optuna
 mlflow
 imageio
 imageio-ffmpeg
+optuna-dashboard
