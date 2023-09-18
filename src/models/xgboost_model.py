@@ -74,17 +74,19 @@ def optimize_hyperparams_optune(X_train: DataFrame, y_train: pd.Series,
 
     with mlflow.start_run(run_name=params['MLflow_config']['run_names']['hyperparameter_optimization'], nested=True):
 
-        logger.info("Optimizing hyperparameters")
-        study = optuna.create_study(direction='maximize')
-    
         models_dir = 'models/dev'
         model_dir = os.path.join(models_dir, 'xgb')
         os.makedirs(model_dir, exist_ok=True)
-    
+        storage = f'sqlite:///{os.path.join(model_dir, "optuna_study.db")}'  # SQLite database URL
+
+        # Specify a study name
+        study_name = "xgb_optimization_study"
+
+        logger.info("Optimizing hyperparameters")
+        study = optuna.create_study(direction='maximize', storage=storage, study_name=study_name,load_if_exists=True)
+
         study.optimize(objective, n_trials=params['num_trials'])
-        study_file_path = os.path.join(model_dir, 'optuna_study.pkl')
-        joblib.dump(study, study_file_path)
-        mlflow.log_artifact(study_file_path)
+        mlflow.log_artifact(os.path.join(model_dir, "optuna_study.db"))
 
     best_params = study.best_params
     logger.info(f"Best hyperparameters found: {best_params}")
