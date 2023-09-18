@@ -54,6 +54,9 @@ model_training:
   target_column: label
   predictions_dir: data/results/
   optimize_hyperparams: True
+  optuna_config:
+    study_name: xgb_optimization_study
+    delete_existing_study: True
   num_trials: 50
   score_metric: f1_weighted  #f1_micro, f1_weighted, 'recall', 'precision', 'roc_auc', etc. as needed (not f1 for multiclass)
   train_prod_model: True

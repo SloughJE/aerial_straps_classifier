@@ -80,10 +80,19 @@ def optimize_hyperparams_optune(X_train: DataFrame, y_train: pd.Series,
         storage = f'sqlite:///{os.path.join(model_dir, "optuna_study.db")}'  # SQLite database URL
 
         # Specify a study name
-        study_name = "xgb_optimization_study"
-
+        study_name = params['optuna_config']['study_name']
         logger.info("Optimizing hyperparameters")
-        study = optuna.create_study(direction='maximize', storage=storage, study_name=study_name,load_if_exists=True)
+
+        # Delete the existing study
+        if params['optuna_config']['delete_existing_study']:
+            logger.info(f"Deleting existing study: {study_name}")
+            try:
+                optuna.delete_study(study_name=study_name, storage=storage)
+            except KeyError:
+                logger.info("No existing study found. Creating a new one.")
+
+        # Create a new study
+        study = optuna.create_study(direction='maximize', storage=storage, study_name=study_name, load_if_exists=True)
 
         study.optimize(objective, n_trials=params['num_trials'])
         mlflow.log_artifact(os.path.join(model_dir, "optuna_study.db"))
