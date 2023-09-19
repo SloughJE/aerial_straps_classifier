@@ -34,7 +34,7 @@ features:
   save_annotated_video: False
   input_photo_dir: data/interim/photos/
   output_photo_dir: data/processed/photos/
-  save_annotated_photo: False
+  save_annotated_photo: True
   interim_landmarks_directory: data/interim/landmarks
   interim_features_directory: data/interim/features
   labeled_dir: data/interim/labeled
