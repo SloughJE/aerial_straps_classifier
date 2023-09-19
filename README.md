@@ -77,20 +77,21 @@ graph TD;
 ## 1. Media Processing
 
 ### 1.1 Video Processing
-To streamline the labeling process, the pipeline provides functionalities to reduce the size of the videos. This ensures quicker loading and processing during the labeling stage. Additionally, the script can produce mirrored versions of the videos which can be particularly beneficial in scenarios where data augmentation is required. Already processed videos will be skipped. Videos are named the same as the originals but are placed in this different directory to distinguish them.
+To streamline the labeling process, the pipeline provides functionalities to reduce the size of the videos. This ensures quicker loading and processing during the labeling stage. Additionally, the script can produce mirrored versions of the videos. Already processed videos will be skipped. Videos are named the same as the originals but are placed in this different directory to distinguish them.
 
 - **Reduction Factor**: An integer that specifies the factor by which the dimensions of the videos will be reduced. For example, a reduction factor of 4 would reduce both the width and height of the video to 1/4th of their original size.
 
-## 1.2 Photo Processing
+### 1.2 Photo Processing
 Similar to videos, the pipeline also offers a tool for preparing photos for labeling. This involves creating mirrored versions of the images. Mirroring photos can be useful for expanding the dataset and ensuring model robustness.
 
-### A Note on Mirroring Media
-In aerial straps there are many poses in which the performer is using only one arm to hang from the straps. For example, the meathook pose can be performed on the left or right arm, and will just look like a mirrored version of that pose. The following 2 photos show the original photo, and the mirrored version of the meathook pose.
+### Mirroring Media for Enhanced Learning
+In the aerial straps discipline, numerous poses involve the performer suspending themselves using a single arm, thereby creating a distinct visual symmetry between poses executed on the left and right arms. A prime example is the meathook pose, which essentially appears as a mirrored version of itself when performed on the alternate arm. Below, you can observe the original and the mirrored renditions of this pose:
 
 | ![original photo of meathook pose](/data/interim/photos/IMG_0073.jpg) | ![mirrored photo of meathook pose](/data/interim/photos/mirrored_IMG_0073.jpg) |
 |:--:|:--:|
 | *original photo of meathook pose* | *mirrored photo of meathook pose* |
 
+Moreover, even poses that utilize both arms for execution are mirrored to augment the dataset. This strategy not only enriches the variety of examples but also leverages the subtle differences between the original and mirrored instances, thereby facilitating a more nuanced understanding for the model. This approach ensures a comprehensive learning from a richer and more diverse dataset, enhancing the model's ability to recognize and differentiate between intricate poses with higher accuracy.
 
 ## 2. Labeling
 
