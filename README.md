@@ -1,8 +1,8 @@
+![Work in Progress](https://img.shields.io/badge/Status-Work%20in%20Progress-yellow)
+
 # Aerial Straps Pose Classifier
 
 This project introduces an intelligent solution leveraging the capabilities of machine learning to classify various aerial straps poses captured in photos and videos. Building on the rapid advancements in computer vision, this projectaims to engineer a comprehensive pipeline to process, label, and train models capable of recognizing and categorizing key poses used in aerial straps routines.
-
-![Work in Progress](https://img.shields.io/badge/Status-Work%20in%20Progress-yellow)
 
 # What is Aerial Straps?
 From Wikipedia, [aerial straps](https://en.wikipedia.org/wiki/Aerial_straps) "are a type of aerial apparatus on which various feats of strength and flexibility may be performed, often in the context of a circus performance. It is a cotton or nylon web apparatus that looks like two suspended ribbons. Wrapping the strap ends around hands and wrists, the performer performs holds, twists, rolls and manoeuvres, requiring extreme strength and precision similar to men’s rings in gymnastics." 
