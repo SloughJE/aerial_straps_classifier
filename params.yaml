@@ -28,31 +28,38 @@ labeling:
     - file2.mov
   force_relabel_all: True
 
-
 features:
   input_video_dir: data/interim/reduced/
   output_video_dir: data/processed/videos/
   save_annotated_video: False
   input_photo_dir: data/interim/photos/
   output_photo_dir: data/processed/photos/
-  save_annotated_photo: False
+  save_annotated_photo: True
   interim_landmarks_directory: data/interim/landmarks
   interim_features_directory: data/interim/features
   labeled_dir: data/interim/labeled
   final_features_directory: data/processed/features
 
-model_dev:
+model_training:
+  MLflow_config:
+    experiment_name: "XGB_Optimization_and_Training"
+    run_names:
+      main: "Main_Pipeline_Run"
+      hyperparameter_optimization: "Hyperparameter_Optimization"
+      final_training: "Retrain_on_Train_Dataset"
+      prod_training: "Prod_Model_FULL_Dataset_Train"
   model_type: xgb
   final_features_filepath: data/processed/features/final_features.csv
   test_size: 0.2
   target_column: label
   predictions_dir: data/results/
   optimize_hyperparams: True
-  score_metric: f1_weighted  # You can set this to f1_micro, f1_weighted, 'recall', 'precision', 'roc_auc', etc. as needed (not f1 for multiclass)
+  optuna_config:
+    study_name: xgb_optimization_study
+    delete_existing_study: True
+  num_trials: 50
+  score_metric: f1_weighted  #f1_micro, f1_weighted, 'recall', 'precision', 'roc_auc', etc. as needed (not f1 for multiclass)
+  train_prod_model: True
 
-model_prod:
-  model_type: xgb
-  final_features_filepath: data/processed/features/final_features.csv
-  target_column: label
   
   

@@ -10,3 +10,7 @@ mediapipe
 protobuf<=3.20.*
 xgboost
 optuna
+mlflow
+imageio
+imageio-ffmpeg
+optuna-dashboard
