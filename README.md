@@ -1,25 +1,27 @@
 # Aerial Straps Pose Classifier
 
-This project introduces an intelligent solution that harnesses the power of machine learning to accurately classify various aerial straps poses from photos and videos. With the rapid advancements in computer vision, we've engineered a comprehensive pipeline to process, label, and train models that can recognize and categorize key poses used in aerial straps routines.
+This project introduces an intelligent solution leveraging the capabilities of machine learning to classify various aerial straps poses captured in photos and videos. Building on the rapid advancements in computer vision, this projectaims to engineer a comprehensive pipeline to process, label, and train models capable of recognizing and categorizing key poses used in aerial straps routines.
 
 # What is Aerial Straps?
 From Wikipedia, [aerial straps](https://en.wikipedia.org/wiki/Aerial_straps) "are a type of aerial apparatus on which various feats of strength and flexibility may be performed, often in the context of a circus performance. It is a cotton or nylon web apparatus that looks like two suspended ribbons. Wrapping the strap ends around hands and wrists, the performer performs holds, twists, rolls and manoeuvres, requiring extreme strength and precision similar to men’s rings in gymnastics." 
 If you have seen a [Cirque du Soleil](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwjTyt32h5aBAxVaFlkFHV7sAhcQFnoECBkQAQ&url=https%3A%2F%2Fwww.cirquedusoleil.com%2F&usg=AOvVaw0VWSr1RfYBuHS09WwR0tD_&opi=89978449) show, you have probably seen an aerial straps performance. There are many examples on [YouTube](https://www.youtube.com/results?search_query=aerial+straps) of course. 
-Although many of the performances you may see involve the performer moving through poses quickly or doing more advanced or artistic versions of a pose, there are many specific basic poses that can be identified. Some of these poses overlap with other disciplines such as calisthenics or gymnastics, for example the back lever is a common calisthenics position that can also be performed on aerial straps:
+Although many performances involve rapid transitions through poses or more advanced and artistic versions of a pose, there exist specific basic poses identifiable in this art. These poses sometimes overlap with movements from other disciplines such as calisthenics or gymnastics, an example being the "back lever" - a common calisthenics position that is also performed on aerial straps:
 
 | ![back lever on aerial straps](/data/raw/photos/straps_monarca_back_lever.jpg) | 
 |:--:| 
 | *back lever on aerial straps* |
 
 # Motivation for Project
-I've been training aerial straps for a few years, and always thought of combining aerial straps and machine learning. At one point, I saw the MediaPipe pose detection model and tried it out on a video of myself. The results were pretty good. Eventually I had the idea to create an aerial straps classification model using MediaPipe to extract features. This projects also attempts to showcase an ML project from end to end, from conception, data pre-processing, data collection, data labeling, EDA, feature creation, model development, evaluation, hyperparameter tuning and deployment. 
+Having trained in aerial straps for several years and being a data scientist, I envisioned combining this discipline with machine learning technology. This took a tangible form when I experimented with the MediaPipe pose detection model on a video of myself, obtaining promising results. Subsequently, I had the idea to create an aerial straps classification model utilizing MediaPipe for feature extraction. 
+
+This project intends to demonstrates a comprehensive approach to a machine learning project, covering all stages from inception to deployment, which involves tasks such as data collection, data pre-processing, data labeling, exploratory data analysis (EDA), feature creation, model development, evaluation, hyperparameter tuning, and deployment.
 
 ## Project Highlights:
 
-- **Data Processing**: Process and prepare media, including videos and photos, to create a streamlined dataset.
-- **Data Labeling**: Distinguish between intricate poses like the 'meathook', 'back lever', and 'reverse meathook', among others.
+- **Data Processing**: Process and prepare media, including videos and photos, to create a dataset ready for analysis.
+- **Data Labeling**: Manually label poses like the 'meathook', 'back lever', and 'reverse meathook', among others.
 - **Feature Extraction**: Extract critical pose landmarks, create joint angle and spatial relationship features to capture the intricacies of each pose.
-- **Model Training**: Train robust machine learning models, evaluate their performance, and refine them for real-world applications.
+- **Model Training**: Train machine learning models, evaluate their performance, and refine them for deployment applications.
    - **Tracking and Evaluation**:
       - **Hyperparameter Optimization**: Leverage the Optuna framework for hyperparameter optimization, utilizing strategies like Bayesian optimization to fine-tune model parameters and achieve optimal performance. 
       - **Optuna Dashboard**: Visualize and analyze the optimization process interactively, gaining insights into hyperparameter relationships and their impact on the model's performance.
@@ -42,23 +44,23 @@ graph TD;
    J --> Q{Apply Labels to Mirrored Media};
    K --> Q;
    
-   Q --> R{Extract Landmarks};
-   R -->|Videos| S[Extract Landmarks for Videos];
-   R -->|Photos| T[Extract Landmarks for Photos];
+   Q --> R{MediaPipe: Extract Landmarks};
+   R -->|Videos| S[Extract Video Landmarks];
+   R -->|Photos| T[Extract Photo Landmarks];
    
-   S --> Z{Create Features};
+   S --> Z{Feature Creation};
    T --> Z;
    
-   Z --> U[Extract Joint Angle and Spatial Features from Landmarks];
+   Z --> U[Derive Joint Angles and Spatial Features];
    
    U --> AB{"Aggregate Individual Feature <br>and Label Files"};
     
    AB --> AD{Model Training};
    
-   AD --> AG[Train Dev Model];
+   AD --> AG[Train Development Model];
    
    AG --> AI[Optuna: Hyperparameter Optimization];
-   AI --> AJ[Optuna Dashboard for Hyperparameter Visualization];
+   AI --> AJ[Optuna Dashboard: Hyperparameter Visualization];
    AJ --> AH["MLflow: Experiment Tracking"]; 
    
    AJ --> AK[Generate Metrics/Visualizations];
@@ -66,6 +68,7 @@ graph TD;
    
    AK --> AM[Train Production Model];
    AM --> AH;
+
 
 
 ```
@@ -77,7 +80,7 @@ graph TD;
 ## 1. Media Processing
 
 ### 1.1 Video Processing
-To streamline the labeling process, the pipeline provides functionalities to reduce the size of the videos. This ensures quicker loading and processing during the labeling stage. Additionally, the script can produce mirrored versions of the videos. Already processed videos will be skipped. Videos are named the same as the originals but are placed in this different directory to distinguish them.
+To streamline the labeling process, the pipeline provides functionalities to reduce the size of the videos. This ensures quicker loading and processing during the labeling stage. Additionally, the script can produce mirrored versions of the videos. Videos are named the same as the originals but are placed in this different directory to distinguish them.
 
 - **Reduction Factor**: An integer that specifies the factor by which the dimensions of the videos will be reduced. For example, a reduction factor of 4 would reduce both the width and height of the video to 1/4th of their original size.
 
@@ -92,6 +95,7 @@ In the aerial straps discipline, numerous poses involve the performer suspending
 | *original photo of meathook pose* | *mirrored photo of meathook pose* |
 
 Moreover, even poses that utilize both arms for execution are mirrored to augment the dataset. This strategy not only enriches the variety of examples but also leverages the subtle differences between the original and mirrored instances, thereby facilitating a more nuanced understanding for the model. This approach ensures a comprehensive learning from a richer and more diverse dataset, enhancing the model's ability to recognize and differentiate between intricate poses with higher accuracy.
+
 
 ## 2. Labeling
 
@@ -152,7 +156,7 @@ These functions make it efficient to label video data for machine learning tasks
    - Each row contains the photo filename (with "photo_" as prefix) and the assigned label.
 
 
-> **Important Note**: It is recommended to run the Labeling part of the code outside of the VS Code integrated terminal, such as in the Mac Terminal. Running video playback and labeling within an integrated terminal like the one in VS Code may lead to issues. You may also need to install some additional packages to support video playback in your terminal environment.
+> **Important Note**: It may be better to run the Labeling part of the code outside of the VS Code integrated terminal, such as in the Mac Terminal. Running video playback and labeling within an integrated terminal like the one in VS Code may lead to issues. You may also need to install some additional packages to support video playback in your terminal environment.
 
 ## 3. Mirrored Media Labeling
 
@@ -171,53 +175,35 @@ Once videos and photos are labeled, it's essential to ensure that their mirrored
 3. **Saving Mirrored Labels**: 
    - The mirrored labels are saved in CSV format in the specified output directory.
 
-### Note: 
+> **Note**: 
 This step is automated and doesn't require manual labeling. It merely applies existing labels to mirrored versions.
 
 
 ## 4. Features
 
-### Overview
-
-This code extracts pivotal pose landmarks and angles from video frames and photos, optimizing for aerial straps performance analysis. Although there are separate functions for photos and videos to extract landmarks for organization's sake, creating the features from the output is practially the same and performed in one function for both photos and videos.
+This code extracts pivotal pose landmarks and angles from video frames and photos, optimizing for aerial straps performance analysis. Although there are separate functions for photos and videos to extract landmarks for organization's sake, creating the features from the output is practically the same and performed in one function for both photos and videos.
 
 ### Pose Landmark Extraction
 
-Utilize [MediaPipe's Pose Landmarker](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker) to derive critical pose landmarks. Not all landmarks are considered; we focus on those pertinent to aerial straps, disregarding ones like the mouth landmark.
+Leveraging the [MediaPipe's Pose Landmarker](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker), I extract essential pose landmarks that are particularly significant in aerial straps performances, while excluding less relevant landmarks such as those pertaining to the mouth.
 
-#### How MediaPipe Pose Landmarker Works:
-
-MediaPipe's Pose Landmarker detects key body landmarks using a trained machine learning model. The landmarks represent anatomical points, providing a simplified yet robust skeleton of a person in 2D space.
-
-### Joint Angle Features Calculation with Landmarks
-
-Angles between joints or body segments are invaluable for aerial straps posture analysis. The code calculates the angle formed at a vertex between two other points in 2D space. We use the landmark data to derive specific joint angles vital for identifying poses, such as elbow, shoulder, hip, and knee angles.
-
-Some of the extracted joint angle features include:
-
-- **Elbow Angle**: The angle formed between the shoulder, elbow, and wrist joints.
-- **Shoulder Angle**: The angle formed between the elbow, shoulder, and hip joints.
-- **Hip Angle**: The angle formed between the shoulder, hip, and knee joints.
-- **Knee Angle**: The angle formed between the ankle, knee, and hip joints.
-
-These joint angles provide insights into the body's orientation and can be valuable features for training machine learning models to classify and analyze image data.
+MediaPipe's Pose Landmarker operates through a trained machine learning model to identify key body landmarks, illustrating a simplified yet detailed 2D skeleton representation of a person based on anatomical points.
 
 ### 4.1 **Extract Pose Landmarks from Videos**
 
-Use the `extract_landmarks_for_videos` function to obtain the required data from video frames:
+The `extract_landmarks_for_videos` function is designed to extract the necessary data from video frames:
 
-- **Input**: Accepts both original or quality-reduced videos.
-- **Output**: Produces a distinct CSV files for every video: `video_{video_name}_landmarks.csv`.
-
+- **Input**: Compatible with both original and quality-reduced videos.
+- **Output**: Generates a unique CSV file for each video, named `video_{video_name}_landmarks.csv`.
 
 ### 4.2 **Extract Pose Landmarks from Photos**
 
-Use the `extract_landmarks_for_photos` function to obtain the required data from photos:
+To retrieve the required data from photos, use the `extract_landmarks_for_photos` function:
 
-- **Input**: Takes in high-resolution or down-scaled photos.
-- **Output**: Outputs one CSV file for every photo: `photo_{photo_name}_landmarks.csv`.
+- **Input**: Suitable for high-resolution or down-scaled photos.
+- **Output**: Creates a dedicated CSV file for each photo, following the pattern `photo_{photo_name}_landmarks.csv`.
 
-Here is an example of the landmarks (blue dots) extracted with connections drawn between the landmarks:
+Below is an illustrative example showcasing the extracted landmarks represented as blue dots, with connections drawn between them:
 
 | ![landmarks extracted with Mediapipe pose model](/data/processed/photos/straps_monarca_back_lever_small.jpeg) | 
 |:--:| 
@@ -230,14 +216,25 @@ This step creates joint angle features, calculating various joint angles such as
 
 Subsequently, the extract_angles function utilizes calculate_2d_angle to determine several specified angles, with landmarks predefined for each angle (e.g., the left elbow angle is defined by the landmarks 'LEFT_SHOULDER', 'LEFT_ELBOW', and 'LEFT_WRIST'). 
 
+Some of the critical joint angles being analyzed:
+
+- **Elbow Angle**: Determined by the shoulder, elbow, and wrist joints.
+- **Shoulder Angle**: Formed by the elbow, shoulder, and hip joints.
+- **Hip Angle**: Constituted by the shoulder, hip, and knee joints.
+- **Knee Angle**: Derived from the angles between the ankle, knee, and hip joints.
+
 #### Spatial Features
-To create 'spatial features', we calculate the relative vertical positions of various pairs of body landmarks using their y-coordinates. In other words, is the left foot above, below or level with the left hip.
 
-A critical aspect of this function is defining a margin of error when determining the spatial relation. Currently we use 'above','below' or 'level' to characterize the spatial relationship. A margin of error is necessary to realistically categorize the relationship as 'level'. We clearly cannot assume that the hips must be exactly the same y coordinate as the shoulders to be considered 'level' with each other. This magin was established through manual analysis of several photos and videos alongside the data. It's important to note that the chosen margin might not be fully generalizable, and adjustments may be needed based on the specific characteristics of other datasets. It was determined not to be feasible to create any sort of relative margin. However, we do currently define a different margin for the head to shoulder relationship, as it is consistently significantly smaller than the other relationships.
+Spatial features are crafted through the calculation of relative vertical positions between different pairs of body landmarks, an assessment grounded on their y-coordinates. Essentially, it delineates whether a specific body part, say the left foot, is situated above, at level, or below another landmark, like the left hip.
 
-Given a defined margin of error, the function discerns whether one landmark is 'above', 'below', or 'level' with another, helping to identify spatial relationships between different body parts. For instance, understanding if the 'knee' is above, below, or level with the 'hip' may aid in determining the pose. 
+A critical aspect of this function is setting a 'margin of error,' a parameter that facilitates a realistic classification of the 'level' relationship. Despite the criticality of precision, it is unfeasible to demand an exact match in the y-coordinates to categorize two landmarks as 'level.' This margin, therefore, acts as a buffer, allowing for a practical categorization grounded on extensive manual analysis of numerous photos and videos paired with data evaluation.
 
-Each spatial feature is prefixed with 'spatial_' to craft intuitive and descriptive column names in the final output DataFrame. All csv files in the input folder ending with `_landmarks` will be processed.
+The predetermined margin is not universally applicable and may require modifications to accommodate the particularities of diverse datasets. While establishing a relative margin was ruled out, an exception exists for the head-to-shoulder relationship, where a unique margin is employed given its consistently smaller span compared to other relationships.
+
+This function thereby categorizes landmarks into three classifications — 'above,' 'below,' or 'level' — enhancing the understanding of spatial dynamics between body parts. Recognizing whether the 'knee' is elevated compared to the 'hip,' for instance, can be instrumental in pose identification.
+
+To ensure clarity and facilitate easy recognition in the output DataFrame, each spatial feature is prefixed with 'spatial_,' a nomenclature strategy that nurtures intuitive and descriptive column headings. This function is designed to process all csv files appended with `_landmarks` in the input directory.
+
 
 ## 5. Combine Features from all CSV Files
 
@@ -246,20 +243,19 @@ The `combine_csv_files` function consolidates interim feature files with labeled
 ### Functionality
 The function reads interim features and labeled files from specified directories and merges them based on the filename and frame number. The merged result, which contains both features and labels, is saved in the final features directory. If any row in the merged DataFrame lacks a matching label, a warning is printed to notify the user with the concerning file. The final DataFrame, which comprises features combined with labels, is saved to the `final_features_directory` with the filename `final_features.csv`.
 
-Ensure the labeled data is consistent and matches the filenames and frame numbers in the features data. Any inconsistency may result in missing labels for some entries.
-
 ## 6. Model Training and Evaluation
 
-This section provides functionalities for training, evaluating, and saving machine learning models for the image analysis task. The main components include:
+This section of the project focuses on the training, evaluation, and storage of machine learning models used in image analysis, particularly involving the following elements:
 
-#### **XGBoost for Model Training**
+### **XGBoost for Model Training**
 
-In the initial stages of this project, there was a provision to incorporate multiple machine learning models for experimentation, as seen in the `MODEL_MAPPER` configuration. However, as the project evolved, the focus narrowed down to exclusively utilizing [XGBoost](https://xgboost.readthedocs.io/en/stable/). XGBoost, or eXtreme Gradient Boosting, is an implementation of gradient boosted decision trees designed for speed and performance. This ensemble method builds multiple decision trees and merges them together to get a more accurate and robust model.
+At the outset, the project considered a range of machine learning models, as indicated by the `MODEL_MAPPER` configuration. However, as development progressed, it was decided to focus exclusively on [XGBoost](https://xgboost.readthedocs.io/en/stable/) for several reasons:
 
-The choice of XGBoost was influenced by several factors. Firstly, despite the origin of the data being images, the features utilized for training are extracted and presented in a tabular format. XGBoost has consistently demonstrated superior performance on tabular data compared to other machine learning models. Secondly, XGBoost can handle categorical variables natively, eliminating the need for preprocessing steps such as one-hot encoding, which would be necessary for other algorithms. This is particularly beneficial in managing the spatial features in this dataset. Additionally, XGBoost is known for its speed and performance, which is critical in the iterative process of model training and hyperparameter optimization.
+- **Tabular Data Handling:** the features are derived in a tabular format, a type of data with which XGBoost historically performs well.
+- **Categorical Variable Management:** XGBoost can natively manage categorical variables, allowing us to bypass preprocessing steps such as one-hot encoding — a significant advantage given the spatial features in our dataset.
+- **Speed and Performance:** XGBoost stands out for its efficiency, a crucial attribute given the iterative nature of model training and hyperparameter tuning.
 
-While the current implementation focuses on XGBoost, the `MODEL_MAPPER` configuration retains the flexibility to integrate additional models in the future, should there be a need to explore other machine learning algorithms. Given these advantages, XGBoost was the chosen algorithm for this project, aligning well with the data characteristics and project requirements, while also leaving room for potential expansions in the future.
-
+While we have opted for XGBoost, we retain the flexibility to integrate other algorithms in the future, courtesy of the adaptable `MODEL_MAPPER` configuration.
 
 ### 6.1 **Model Training Pipeline**
 
@@ -271,7 +267,7 @@ The `train_model` script is central to this phase, orchestrating the entire trai
 
 #### **MLflow Integration**
 
-Our pipeline integrates [MLflow](https://mlflow.org/docs/latest/index.html), a platform developed by Databricks to streamline the machine learning lifecycle, including experimentation, reproducibility, and deployment. This integration is pivotal in managing and tracking the experiments conducted during the model training process. Here are the key features of this integration:
+The pipeline integrates [MLflow](https://mlflow.org/docs/latest/index.html), a platform developed by Databricks to streamline the machine learning lifecycle, including experimentation, reproducibility, and deployment. This integration is pivotal in managing and tracking the experiments conducted during the model training process. Here are the key features of this integration:
 
 - **Experiment and Run Naming**: MLflow organizes experiments by names and allows for individual runs to be named, aiding in the identification and segregation of different stages of the model training process.
 - **Parameter and Metric Logging**: All parameters utilized during the training are logged, providing a detailed record of the settings used in each run. Similarly, the chosen metric for hyperparameter optimization, as well as other evaluation metrics, are logged for each run, facilitating performance tracking and comparison.
@@ -289,17 +285,15 @@ To launch the dashboard, use the command below:
 mlflow ui
 ```
 
-
 Example MLflowdashboard:
 | ![Example MLflow Dashboard](assets/images/mlflow_dashboard.png) | 
 |:--:| 
 | *Example MLflow Dashboard* |
 
 
-
 #### **Optuna for Hyperparameter Optimization**
 
-When the `optimize_hyperparams` parameter is set to True in the `params.yaml` file, the pipeline leverages [Optuna](https://optuna.readthedocs.io/en/stable/), an n open-source  hyperparameter optimization software framework known for its efficiency and performance in finding the optimal hyperparameters for machine learning models.
+When the `optimize_hyperparams` parameter is set to True in the `params.yaml` file, the pipeline leverages [Optuna](https://optuna.readthedocs.io/en/stable/), an open-source  hyperparameter optimization framework known for its efficiency and performance in finding the optimal hyperparameters for machine learning models.
 
 By default, Optuna employs a Bayesian optimization algorithm known as Tree-Structured Parzen Estimator (TPE) to perform hyperparameter optimization. However, it supports a variety of other optimization algorithms, offering flexibility in the optimization process. In our pipeline, we stick to the default TPE algorithm for optimization. The strategies employed by Optuna are broadly categorized into two:
 
@@ -338,39 +332,24 @@ For a more detailed walkthrough of the visualization features available, refer t
 
 #### **Production Model Training**
 
-The production model training is a crucial step in preparing the model for real-world applications, ensuring it delivers the best performance when deployed. This is facilitated by setting the `train_prod_model` parameter to `True`, instructing the pipeline to train a production model using the entire dataset available, inclusive of the optimized hyperparameters if the optimization process was enabled.
+Setting the `train_prod_model` parameter to `True` enables the pipeline to train a production model utilizing the entire dataset. If hyperparameter optimization is activated, the optimized parameters will be used.
 
-This production model training is executed as a separate run nested under the `Main_Pipeline_Run`, leveraging the full extent of the data to guarantee the highest level of performance. The detailed steps to register and manage this production model through MLflow are as follows:
+The training process is a nested run under the `Main_Pipeline_Run`, making full use of the available data to attain optimal performance. Here is how you can register and manage this production model using MLflow:
 
-1. **Access the MLflow UI**: Start by navigating to the specific run in the MLflow UI where the production model was trained.
+1. **Access the MLflow UI**: Navigate to the experiment and run where the production model was trained in the MLflow UI.
    
-2. **Locate the Model**: Within the run details, find the production model under the "Artifacts" tab.
+2. **Locate the Model**: Find the production model in the run details under the "Artifacts" tab.
 
-3. **Register the Model**: Click on "Register Model" to initiate the registration of the model in the MLflow Model Registry.
+3. **Register the Model**: Click "Register Model" to start the model registration in the MLflow Model Registry.
 
-4. **Manage Model Versions and Stages**: Post registration, the MLflow Model Registry allows for detailed management of the model versions. You can annotate different versions with descriptions, transition them through various stages such as Staging and Production, and archive them when necessary.
+4. **Manage Model Versions and Stages**: After registering the model, use the MLflow Model Registry for version management. You can add descriptions to different versions, move them through stages like "Staging" and "Production," and archive them if necessary.
 
-5. **Deployment**: Once the model is registered and properly annotated, it is ready for deployment. MLflow supports deployment across various platforms, ensuring a smooth transition from development to production.
+5. **Deployment**: The model is now ready for deployment, with MLflow offering support for a variety of platforms, facilitating a smooth transition from development to production.
 
-By following this structured approach, you not only ensure that your model is trained with the best possible configuration but also facilitate a streamlined process for moving from model training to deployment, with detailed tracking and management through the MLflow UI. This ensures readiness for real-world applications, with the highest level of performance backed by a comprehensive training and optimization process.
+This workflow ensures the model is trained with the optimal configuration and readied for deployment efficiently, benefitting from thorough tracking and management via the MLflow UI.
 
-#### **Parameters**
 
-The parameters in the `params.yaml` file offer control over various aspects of the training pipeline, including:
-
-- **MLflow Configuration**: Setting the experiment name and defining different run names for various stages of the training process.
-- **Model Type**: Specifying the type of model to train (`xgb` in this case).
-- **Data Filepath**: Defining the path to the CSV file containing the final features used for training.
-- **Test Size**: Setting the fraction of the data to be used as the test set during the training-validation split.
-- **Target Column**: Specifying the column in the dataset that contains the target labels.
-- **Predictions Directory**: Setting the directory where the predictions will be saved.
-- **Hyperparameter Optimization**: Controlling whether to perform hyperparameter optimization and setting the number of trials for optimization.
-- **Score Metric**: Defining the metric to guide the hyperparameter optimization process.
-- **Production Model Training**: Controlling whether to train a production model on the full dataset.
-
-By adjusting these parameters, you can tailor the training process to meet specific requirements and experiment with different settings to find the most effective approach.
-
-### 6.2 **Generating Evaluation Metrics**
+### 6.2 **Evaluation Metrics**
 
 Post training, the pipeline offers functionalities to generate a comprehensive set of evaluation metrics and visualizations to assess the performance of the trained models. These metrics and visualizations are logged as MLFlow artifacts, ensuring they are easily accessible and well-documented for each run. The key functions involved in this process include:
 
@@ -387,7 +366,6 @@ The `generate_visualizations_and_save_metrics` function creates a variety of vis
 The `generate_feature_importance_visualization` function is employed to visualize and understand the importance of different features in the dataset. It creates a bar chart that displays the features ranked by their importance, as determined by the model. This visualization is saved and logged as an MLFlow artifact, providing insights into which features are most influential in the predictions made by the model.
 
 These visualizations, along with various metrics, are logged as artifacts in MLFlow, ensuring a detailed record of the evaluation process is maintained and can be easily accessed and reviewed through the MLFlow UI.
-
 
 
 # Pipeline Usage Sequence
