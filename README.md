@@ -17,9 +17,60 @@ I've been training aerial straps for a few years, and always thought of combinin
 ## Project Highlights:
 
 - **Data Processing**: Process and prepare media, including videos and photos, to create a streamlined dataset.
-- **Data Labeling**: Distinguish between intricate poses like the 'meathook', 'nutcracker', and 'l-hang', among others.
+- **Data Labeling**: Distinguish between intricate poses like the 'meathook', 'back lever', and 'reverse meathook', among others.
 - **Feature Extraction**: Extract critical pose landmarks, create joint angle and spatial relationship features to capture the intricacies of each pose.
 - **Model Training**: Train robust machine learning models, evaluate their performance, and refine them for real-world applications.
+   - **Tracking and Evaluation**:
+      - **Hyperparameter Optimization**: Leverage the Optuna framework for hyperparameter optimization, utilizing strategies like Bayesian optimization to fine-tune model parameters and achieve optimal performance. 
+      - **Optuna Dashboard**: Visualize and analyze the optimization process interactively, gaining insights into hyperparameter relationships and their impact on the model's performance.
+      - **MLflow**: Integrate with MLflow for comprehensive experiment tracking, logging details of each optimization trial and facilitating a deeper understanding of the model's behavior over different parameter configurations.
+
+# Project Default Flow Diagram
+
+```mermaid
+graph TD;
+   A[Start] --> B{Process Media};
+   B -->|Videos| C[Process Videos];
+   B -->|Photos| D[Process Photos];
+   
+   C --> I{Label Media};
+   D --> I;
+   
+   I -->|Videos| J[Label Videos];
+   I -->|Photos| K[Label Photos];
+   
+   J --> Q{Apply Labels to Mirrored Media};
+   K --> Q;
+   
+   Q --> R{Extract Landmarks};
+   R -->|Videos| S[Extract Landmarks for Videos];
+   R -->|Photos| T[Extract Landmarks for Photos];
+   
+   S --> Z{Create Features};
+   T --> Z;
+   
+   Z --> U[Extract Joint Angle and Spatial Features from Landmarks];
+   
+   U --> AB{"Aggregate Individual Feature <br>and Label Files"};
+    
+   AB --> AD{Model Training};
+   
+   AD --> AG[Train Dev Model];
+   
+   AG --> AI[Optuna: Hyperparameter Optimization];
+   AI --> AJ[Optuna Dashboard for Hyperparameter Visualization];
+   AJ --> AH["MLflow: Experiment Tracking"]; 
+   
+   AJ --> AK[Generate Metrics/Visualizations];
+   AK --> AH; 
+   
+   AK --> AM[Train Production Model];
+   AM --> AH;
+
+
+```
+<br><br>
+
 
 # Project Details
 
@@ -32,6 +83,14 @@ To streamline the labeling process, the pipeline provides functionalities to red
 
 ## 1.2 Photo Processing
 Similar to videos, the pipeline also offers a tool for preparing photos for labeling. This involves creating mirrored versions of the images. Mirroring photos can be useful for expanding the dataset and ensuring model robustness.
+
+### A Note on Mirroring Media
+In aerial straps there are many poses in which the performer is using only one arm to hang from the straps. For example, the meathook pose can be performed on the left or right arm, and will just look like a mirrored version of that pose. The following 2 photos show the original photo, and the mirrored version of the meathook pose.
+
+| ![original photo of meathook pose](/data/interim/photos/IMG_0073.jpg) | ![mirrored photo of meathook pose](/data/interim/photos/mirrored_IMG_0073.jpg) |
+|:--:|:--:|
+| *original photo of meathook pose* | *mirrored photo of meathook pose* |
+
 
 ## 2. Labeling
 
@@ -139,8 +198,6 @@ Some of the extracted joint angle features include:
 - **Shoulder Angle**: The angle formed between the elbow, shoulder, and hip joints.
 - **Hip Angle**: The angle formed between the shoulder, hip, and knee joints.
 - **Knee Angle**: The angle formed between the ankle, knee, and hip joints.
-- **Spine Angle**: The angle formed between the left hip, right hip, and head landmarks.
-- **Torso Angle**: The angle formed between the left hip, right hip, and neck landmarks.
 
 These joint angles provide insights into the body's orientation and can be valuable features for training machine learning models to classify and analyze image data.
 
@@ -330,51 +387,7 @@ The `generate_feature_importance_visualization` function is employed to visualiz
 
 These visualizations, along with various metrics, are logged as artifacts in MLFlow, ensuring a detailed record of the evaluation process is maintained and can be easily accessed and reviewed through the MLFlow UI.
 
-# Project Default Flow Diagram
 
-```mermaid
-graph TD;
-   A[Start] --> B{Process Media};
-   B -->|Videos| C[Process Videos];
-   B -->|Photos| D[Process Photos];
-   
-   C --> I{Label Media};
-   D --> I;
-   
-   I -->|Videos| J[Label Videos];
-   I -->|Photos| K[Label Photos];
-   
-   J --> Q{Apply Labels to Mirrored Media};
-   K --> Q;
-   
-   Q --> R{Extract Landmarks};
-   R -->|Videos| S[Extract Landmarks for Videos];
-   R -->|Photos| T[Extract Landmarks for Photos];
-   
-   S --> Z{Create Features};
-   T --> Z;
-   
-   Z --> U[Extract Joint Angle and Spatial Features from Landmarks];
-   
-   U --> AB{Aggregate Feature Files};
-    
-   AB --> AD{Model Training};
-   
-   AD --> AG[Train Dev Model];
-   
-   AG --> AI[Optuna: Hyperparameter Optimization];
-   AI --> AJ[Optuna Dashboard for Hyperparameter Visualization];
-   AJ --> AH["MLflow: Experiment Tracking"]; 
-   
-   AJ --> AK[Generate Metrics/Visualizations];
-   AK --> AH; 
-   
-   AK --> AM[Train Production Model];
-   AM --> AH;
-
-
-```
-<br><br>
 
 # Pipeline Usage Sequence
 
