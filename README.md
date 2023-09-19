@@ -330,71 +330,47 @@ The `generate_feature_importance_visualization` function is employed to visualiz
 
 These visualizations, along with various metrics, are logged as artifacts in MLFlow, ensuring a detailed record of the evaluation process is maintained and can be easily accessed and reviewed through the MLFlow UI.
 
-# Project Flow Diagram
+# Project Default Flow Diagram
+
 ```mermaid
 graph TD;
    A[Start] --> B{Process Media};
    B -->|Videos| C[Process Videos];
    B -->|Photos| D[Process Photos];
    
-   C --> E["Input: data/raw/original/"];
-   E --> F["Output: data/interim/reduced/"];
+   C --> I{Label Media};
+   D --> I;
    
-   D --> G["Input: data/raw/photos/"];
-   G --> H["Output: data/interim/photos/"];
-   
-   F --> I{Label Media};
-   H --> I;
    I -->|Videos| J[Label Videos];
    I -->|Photos| K[Label Photos];
    
-   J --> M["Input: data/interim/reduced/"];
-   M --> N["Output: data/interim/labeled/"];
+   J --> Q{Apply Labels to Mirrored Media};
+   K --> Q;
    
-   K --> O["Input: data/interim/photos/"];
-   O --> P["Output: data/interim/labeled/"];
-   
-   N --> Q{Apply Labels to Mirrored Media};
-   P --> Q;
-   Q --> L[Apply Mirror Labels];
-   
-   L --> R{Extract Landmarks};
+   Q --> R{Extract Landmarks};
    R -->|Videos| S[Extract Landmarks for Videos];
    R -->|Photos| T[Extract Landmarks for Photos];
    
-   S --> V["Input: data/interim/reduced/"];
-   V --> W["Output: data/processed/videos/"];
+   S --> Z{Create Features};
+   T --> Z;
    
-   T --> X["Input: data/interim/photos/"];
-   X --> Y["Output: data/processed/photos/"];
+   Z --> U[Extract Joint Angle and Spatial Features from Landmarks];
    
-   W --> Z{Create Features};
-   Y --> Z;
-   Z --> U[Extract Features from Landmarks];
-   
-   U --> AB{Combine Features};
-   AB --> AC[Combine CSV Files];
+   U --> AB{Aggregate Feature Files};
     
-   AC --> AD{Model Training};
-   AD --> AE[Train Model Pipeline];
+   AB --> AD{Model Training};
    
-   AE --> AF["Input: data/processed/features/final_features.csv"];
-   AF --> AG["Output: models/dev/xgb/"]; 
-   AF --> AH["MLflow: Experiment Tracking"]; 
+   AD --> AG[Train Dev Model];
    
    AG --> AI[Optuna: Hyperparameter Optimization];
-   AI --> AH; 
+   AI --> AJ[Optuna Dashboard for Hyperparameter Visualization];
+   AJ --> AH["MLflow: Experiment Tracking"]; 
    
-   AG --> AJ[Generate Metrics/Visualizations];
-   AJ --> AM["Output: data/results/"]; 
+   AJ --> AK[Generate Metrics/Visualizations];
+   AK --> AH; 
    
-   AM --> AH; 
-   
-   AG --> AK[Train Production Model];
-   AK --> AL["Output: models/prod/xgb/"]; 
-   AL --> AH; 
-
-
+   AK --> AM[Train Production Model];
+   AM --> AH;
 
 
 ```
