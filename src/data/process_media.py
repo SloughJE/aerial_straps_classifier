@@ -19,7 +19,10 @@ def process_media(params: dict, media_type: str) -> None:
     Returns:
         None: Processes media and prints progress without returning any value.
     """
-    media_processing_config = params[f'{media_type}_processing']
+    print(media_type)
+    media_type_key = f"{media_type}_processing"  
+    print(media_type_key)
+    media_processing_config = params[media_type_key]  
 
     input_media_dir = media_processing_config[f'input_{media_type}_dir']
     output_media_dir = media_processing_config[f'output_{media_type}_dir']

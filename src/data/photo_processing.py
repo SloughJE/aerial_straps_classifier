@@ -19,4 +19,4 @@ def mirror_photo(input_photo_path, output_photo_dir):
     output_photo_path = os.path.join(output_photo_dir, mirrored_filename)
 
     mirrored_photo = cv2.flip(input_photo, 1)  # Flip horizontally
-    cv2.imwrite(output_photo_path, mirrored_photo)
+    cv2.imwrite(output_photo_path, mirrored_photo, [int(cv2.IMWRITE_JPEG_QUALITY), 100])

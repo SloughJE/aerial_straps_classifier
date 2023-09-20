@@ -14,3 +14,4 @@ mlflow
 imageio
 imageio-ffmpeg
 optuna-dashboard
+pytest
