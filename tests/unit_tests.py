@@ -11,7 +11,7 @@ import cv2
 import numpy as np
 
 # pytest -s tests,  to run with print output
-
+# pytest tests/unit_tests.py -m unit -s
 
 @pytest.mark.unit
 def test_mirror_photo():
@@ -256,16 +256,34 @@ def test_label_frames_valid_key_with_skip(skip_seconds, total_frames, fps):
 
 @pytest.mark.unit
 def create_sample_csv(path, filenames):
-    # Helper function to create sample labeled csv files
+    """
+    Create a sample labeled csv file at the specified path with given filenames.
+
+    Parameters:
+    - path (str): Path where the CSV file will be created.
+    - filenames (list of str): List of filenames to include in the CSV.
+
+    Returns:
+    None
+    """
     df = pd.DataFrame({
         'filename': filenames,
         'label': ['cat' for _ in filenames]
     })
     df.to_csv(path, index=False)
 
+
 @pytest.fixture
 def setup_files(tmpdir):
-    # Setup
+    """
+    Set up temporary directories and sample labeled csv files for testing.
+
+    Parameters:
+    - tmpdir (py.path.local): Temporary directory path provided by pytest.
+
+    Returns:
+    tuple: Paths to input video directory, input photo directory, and output directory.
+    """
     input_video_dir = tmpdir.mkdir("input_videos")
     input_photo_dir = tmpdir.mkdir("input_photos")
     output_dir = tmpdir.mkdir("output")
@@ -277,6 +295,16 @@ def setup_files(tmpdir):
 
 @pytest.mark.unit
 def test_apply_mirror_labels(setup_files):
+    """
+    Test the function apply_mirror_labels to ensure it correctly labels mirrored media files.
+
+    Parameters:
+    - setup_files (fixture): Paths to input video directory, input photo directory, and output directory.
+
+    Returns:
+    None
+    """
+
     input_video_dir, input_photo_dir, output_dir = setup_files
 
     # Create mirrored video and photo files for testing
