@@ -3,12 +3,41 @@ import os
 import yaml
 import numpy as np
 import cv2
+import pytest
 
 from src.data.process_media import process_media
 from src.data.photo_processing import mirror_photo
 from src.data.video_processing import mirror_video, reduce_video_size
 
 # pytest -s tests,  to run with print output
+
+
+def test_process_media_with_non_existing_input_dir(caplog):
+    params = {
+        "video_processing": {
+            "input_video_dir": "non_existing_dir",
+            "output_video_dir": "output_dir",
+            "mirror_videos": False,
+            "reduction_factor": 0.5,
+        }
+    }
+    
+    with pytest.raises(FileNotFoundError):
+        process_media(params, "video")
+
+
+def test_process_media_with_invalid_media_type(caplog):
+    params = {
+        "video_processing": {
+            "input_video_dir": "input_dir",
+            "output_video_dir": "output_dir",
+            "mirror_videos": False,
+            "reduction_factor": 0.5,
+        }
+    }
+    
+    with pytest.raises(KeyError):
+        process_media(params, "invalid_type")
 
 
 def test_process_video_media():

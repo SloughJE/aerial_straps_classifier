@@ -32,6 +32,8 @@ def label_frames(params: Dict[str, Dict[str, str]], video_path: str, skip_second
     fps = round(cap.get(cv2.CAP_PROP_FPS))
     skip_frames = int(fps * skip_seconds)
 
+    print(f"total frame to label: {total_frames}")
+    print(f"labeling every: {skip_frames} frames")
     def get_label_for_frame(frame) -> str:
         while True:
             cv2.imshow('Video Frame', frame)
@@ -55,6 +57,7 @@ def label_frames(params: Dict[str, Dict[str, str]], video_path: str, skip_second
         if not ret:
             break
 
+        print(f"Displaying frame: {frame_number}")
         label = get_label_for_frame(frame)
         
         # Label the current frame and all the previous frames that were skipped
@@ -64,16 +67,19 @@ def label_frames(params: Dict[str, Dict[str, str]], video_path: str, skip_second
         frame_number += skip_frames
 
     # Process the last frames if there are any left
-    if frame_number >= total_frames:
+    last_labeled_frame = labels[-1][0] if labels else -1
+    if last_labeled_frame < total_frames - 1:
         # Display the last frame
         cap.set(cv2.CAP_PROP_POS_FRAMES, total_frames - 1)
         ret, frame = cap.read()
         if ret:
+            print(f"Displaying frame: {total_frames - 1}")
             label = get_label_for_frame(frame)
             
-            # Apply the label to all the remaining frames
-            for i in range(frame_number - skip_frames, total_frames):
+            # Apply the label from the last labeled frame to the end
+            for i in range(last_labeled_frame + 1, total_frames):
                 labels.append((i, label))
+
 
     cap.release()
     cv2.destroyAllWindows()
