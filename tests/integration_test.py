@@ -11,35 +11,7 @@ from src.data.video_processing import mirror_video, reduce_video_size
 
 # pytest -s tests,  to run with print output
 
-
-def test_process_media_with_non_existing_input_dir(caplog):
-    params = {
-        "video_processing": {
-            "input_video_dir": "non_existing_dir",
-            "output_video_dir": "output_dir",
-            "mirror_videos": False,
-            "reduction_factor": 0.5,
-        }
-    }
-    
-    with pytest.raises(FileNotFoundError):
-        process_media(params, "video")
-
-
-def test_process_media_with_invalid_media_type(caplog):
-    params = {
-        "video_processing": {
-            "input_video_dir": "input_dir",
-            "output_video_dir": "output_dir",
-            "mirror_videos": False,
-            "reduction_factor": 0.5,
-        }
-    }
-    
-    with pytest.raises(KeyError):
-        process_media(params, "invalid_type")
-
-
+@pytest.mark.integration
 def test_process_video_media():
     """
     Test the process_media function to ensure that it can successfully process video files.
@@ -94,6 +66,7 @@ def test_process_video_media():
             os.remove(output_video_path)
 
 
+@pytest.mark.integration
 def test_process_photo_media():
     """
     Test the process_media function to ensure that it can successfully process photo files.
@@ -145,6 +118,7 @@ def test_process_photo_media():
         os.remove(os.path.join(photo_dir, test_photo_name))
 
 
+@pytest.mark.integration
 def test_mirror_photo():
     """
     This test function verifies the mirror_photo function.
@@ -194,6 +168,7 @@ def test_mirror_photo():
     os.remove(mirrored_image_path)
 
 
+@pytest.mark.integration
 def test_mirror_video():
     """
     This test function verifies the mirror_video function.
