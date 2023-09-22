@@ -110,16 +110,22 @@ In this process, each frame of a video is assigned a corresponding label.
    - This assists users in deciding the most appropriate label for the current frame.
   
 2. **Key Press Mapping**:
-   - Based on the `params.yaml`, we have the following labels and their associated keys:
-     - `m`: **meathook**
-     - `n`: **nutcracker**
-     - `l`: **l-hang**
-     - `o`: **other pose or transition**
-     - `r`: **reverse meathook**
-     - `b`: **back lever**
-     - `f`: **front lever**
-   - The user is prompted to press the respective key to label the frame. Pressing an unassociated key will result in a reminder of the valid key mappings.
 
+
+Based on the `params.yaml`, we have the following labels and their associated keys:
+   - `m`: **meathook**
+   - `n`: **nutcracker**
+   - `l`: **l-hang**
+   - `o`: **other pose or transition**
+   - `r`: **reverse meathook**
+   - `b`: **back lever**
+   - `f`: **front lever**
+
+The user is prompted to press the respective key to label the frame. Pressing an unassociated key will result in a reminder of the valid key mappings.
+
+### Special Keys:
+- **Left Arrow Key**: If the user is uncertain about a label or wishes to revisit the previous labeled frame, they can press the left arrow key. This will allow them to go back to the last labeled frame and potentially change their selection.
+- **'q' Key**: If at any point the user decides to exit the labeling process prematurely, they can press the 'q' key. This will exit the labeling function, and the progress up to that point will not be saved.
 3. **Progress Saving**: 
    - The labeled data is saved in CSV format. 
    - Each row contains the frame number, filename (with "video_" as prefix), and the assigned label.
