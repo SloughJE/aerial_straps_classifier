@@ -120,8 +120,6 @@ def label_frames(params: Dict[str, Dict[str, str]], video_path: str, skip_second
     return labels
 
 
-
-
 def label_photos(params: dict, photo_path: str) -> list:
     label_mapping = params['labels']
     labels = []
