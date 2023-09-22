@@ -157,9 +157,6 @@ These functions make it efficient to label video data for machine learning tasks
    - The labeled data is saved in CSV format.
    - Each row contains the photo filename (with "photo_" as prefix) and the assigned label.
 
-
-> **Important Note**: It may be better to run the Labeling part of the code outside of the VS Code integrated terminal, such as in the Mac Terminal. Running video playback and labeling within an integrated terminal like the one in VS Code may lead to issues. You may also need to install some additional packages to support video playback in your terminal environment.
-
 ## 3. Mirrored Media Labeling
 
 ### Overview:
