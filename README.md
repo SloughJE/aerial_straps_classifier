@@ -110,22 +110,28 @@ In this process, each frame of a video is assigned a corresponding label.
    - This assists users in deciding the most appropriate label for the current frame.
   
 2. **Key Press Mapping**:
-   - Based on the `params.yaml`, we have the following labels and their associated keys:
-     - `m`: **meathook**
-     - `n`: **nutcracker**
-     - `l`: **l-hang**
-     - `o`: **other pose or transition**
-     - `r`: **reverse meathook**
-     - `b`: **back lever**
-     - `f`: **front lever**
-   - The user is prompted to press the respective key to label the frame. Pressing an unassociated key will result in a reminder of the valid key mappings.
 
+
+Based on the `params.yaml`, we have the following labels and their associated keys:
+   - `m`: **meathook**
+   - `n`: **nutcracker**
+   - `l`: **l-hang**
+   - `o`: **other pose or transition**
+   - `r`: **reverse meathook**
+   - `b`: **back lever**
+   - `f`: **front lever**
+
+The user is prompted to press the respective key to label the frame. Pressing an unassociated key will result in a reminder of the valid key mappings.
+
+### Special Keys:
+- **Left Arrow Key**: If the user is uncertain about a label or wishes to revisit the previous labeled frame, they can press the left arrow key. This will allow them to go back to the last labeled frame and potentially change their selection.
+- **'q' Key**: If at any point the user decides to exit the labeling process prematurely, they can press the 'q' key. This will exit the labeling function, and the progress up to that point will not be saved.
 3. **Progress Saving**: 
    - The labeled data is saved in CSV format. 
    - Each row contains the frame number, filename (with "video_" as prefix), and the assigned label.
 
 ### **Video Frame Labeling Method Summary**:
-The `label_videos` method allows the user to manually label frames from specified videos within a directory. The user is presented with a frame every `skip_seconds` (calculated by number of seconds to skip and frame rate of video) and assigns a label to it. This label is then applied to all frames from the previously labeled frame up to and including the current frame. At the end of the video, the user labels the final frame, and this label is applied to all remaining frames. This table respresents the approach.
+The `label_videos` method allows the user to manually label frames from specified videos within a directory.  Frames are presented to the user at intervals defined by `skip_seconds`, calculated by the frame rate of the video and the number of seconds to skip.  This label is then applied to all frames from the previously labeled frame up to and including the current frame. At the end of the video, the user labels the final frame, and this label is applied to all remaining frames. This table respresents the approach.
 
 **Table**:
 
@@ -139,9 +145,16 @@ The `label_videos` method allows the user to manually label frames from specifie
 | 22                     | 'a'         | Apple          | 21,22          |
 
 **Explanation**: 
-In this example, there are 22 frames in total, and `skip_frames` is set to 5. The user is first presented with frame 0 and assigns the label 'Apple'. This label is applied to frame 0. Next, the user is presented with frame 5 and assigns the label 'Banana'. This label is then applied to frames 1 through 5. This process continues until the end of the video. Since the last frame displayed by skipping frames is not the final frame of the video, the user is presented with the final frame (frame 22) and assigns the label 'Apple'. This label is then applied to frames 21 and 22.
+In this example with 22 frames total and `skip_seconds` set to 5 (assuming each frame represents a second), the user first sees frame 0 and labels it as 'Apple'. This label applies to frame 0. The user then sees frame 5 and labels it as 'Banana', with this label being applied to frames 1 through 5. This process continues throughout the video. Since the frame resulting from the `skip_seconds` calculation isn't the last frame, the user is shown the final frame (frame 22) and labels it. This label is applied to frames 21 and 22.
 
-These functions make it efficient to label video data for machine learning tasks or other analyses, especially when the videos contain continuous segments with the same characteristics.
+**Fixing Labeling Mistakes**
+
+Users can revisit the previous labeled frame by pressing the left arrow key during the labeling process. For instance, if the user is uncertain about the label they just assigned, or if they wish to review the previous frame, they can easily go back.
+
+Example:
+Let's say the user labels frame 20 as 'Cherry' but then decides to re-evaluate their decision upon seeing frame 22. They can press the left arrow key when on frame 22 to return to frame 20, re-label it if necessary, and then continue the process. The user can go back multiple times to the beginning of the video if necessary. 
+
+This approach offers an efficient way to label video data for machine learning tasks or other analyses. It's particularly useful for videos containing continuous segments of consistent characteristics.
 
 
 ### 2.2 Photo Labeling

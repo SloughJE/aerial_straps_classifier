@@ -257,6 +257,81 @@ def test_label_frames_valid_key_with_skip(skip_seconds, total_frames, fps):
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize(
+    "skip_seconds,total_frames,fps", [
+        (1.0, 100, 25),
+        (0.5, 100, 30),
+        (1.5, 120, 24),
+        (2.0, 50, 15),
+        (0.7, 77, 20)
+    ]
+)
+def test_label_frames_with_back_and_change(skip_seconds, total_frames, fps):
+    """
+    Test the frame labeling functionality when the user moves back to a previous frame and changes its label.
+
+    This test simulates the user labeling video frames. After labeling a few frames with "LabelA", the user
+    decides to go back to a previously labeled frame and change its label to "LabelB". The test checks if
+    the labeling tool correctly captures this change.
+
+    The video frames are divided into segments based on the `skip_seconds` value. For example, if `fps` is 30 
+    and `skip_seconds` is 1.0, then every 30 frames will be considered as one segment. The user labels the segments 
+    at the beginning and end of these intervals.
+
+    The main steps of the test are:
+    1. Mock the video properties and the frame reading process.
+    2. Mock the user input (i.e., labeling and navigation commands).
+    3. Call the labeling tool.
+    4. Verify that the returned labels match the expected labels, accounting for the user going back and changing a label.
+
+    Parameters:
+    - skip_seconds: Number of seconds to skip between frames that are displayed for labeling.
+    - total_frames: Total number of frames in the video.
+    - fps: Frames per second of the video.
+
+    Uses Mock and patch to simulate video reading and user interactions.
+
+    Assertions:
+    - Ensures that the returned labels from the labeling tool match the expected labels.
+    """
+    params = {
+        'labels': {
+            'a': 'LabelA',
+            'b': 'LabelB'
+        }
+    }
+    video_path = "dummy_video.mp4"
+    skip_frames = int(skip_seconds * fps)
+
+    # Mock video properties and video reading
+    mock_cap = Mock()
+    type(mock_cap).isOpened = PropertyMock(return_value=True)
+    type(mock_cap).get = Mock(side_effect=[total_frames, fps])
+    type(mock_cap).read = Mock(side_effect=[(True, np.zeros((2, 2))) for _ in range(0, total_frames, skip_frames)] + [(True, np.zeros((2, 2))), (False, None)])
+
+    # We'll simulate a scenario where after the 2nd frame (0-based index), 
+    # the user presses the left arrow key and then changes the label.
+    mock_responses = [ord('a') for _ in range(2)] + [81, ord('b')] + [ord('a') for _ in range(total_frames - 3)]
+
+    with patch("cv2.VideoCapture", return_value=mock_cap), \
+         patch("cv2.imshow"), \
+         patch("cv2.waitKey", side_effect=mock_responses), \
+         patch("builtins.print"):
+            labels = label_frames(params, video_path, skip_seconds)
+
+        # Expected labels now have to account for the label change.
+    expected_labels = []
+    for i in range(1):
+        for j in range(i * skip_frames, (i + 1) * skip_frames):
+            expected_labels.append((j, 'LabelA'))
+    for j in range(1 * skip_frames, 2 * skip_frames):
+        expected_labels.append((j, 'LabelB'))
+    for i in range(2, total_frames):
+        for j in range(i * skip_frames, (i + 1) * skip_frames):
+            expected_labels.append((j, 'LabelA'))
+
+
+@pytest.mark.unit
 def create_sample_csv(path, filenames):
     """
     Create a sample labeled csv file at the specified path with given filenames.
