@@ -367,6 +367,60 @@ The `generate_feature_importance_visualization` function is employed to visualiz
 These visualizations, along with various metrics, are logged as artifacts in MLFlow, ensuring a detailed record of the evaluation process is maintained and can be easily accessed and reviewed through the MLFlow UI.
 
 
+## Running Tests
+
+We utilize `pytest`, a popular Python testing framework, to validate the correctness of the code in this project.
+
+### Discovering Tests
+
+`pytest` automatically discovers and collects tests based on the following criteria:
+- Files that match the pattern `test_*.py` or `*_test.py` inside the directory and its subdirectories.
+- Test functions with names prefixed by `test`.
+- Test classes with names prefixed by `Test`.
+
+The project has been structured to ensure that tests are located in the `tests` directory. This makes it convenient for `pytest` to discover and run them.
+
+### Types of Tests
+In our `pytest.ini` file we set two types of tests:
+
+```ini
+[pytest]
+markers =
+    unit: mark a test as a unit test
+    integration: mark a test as an integration test
+```
+
+1. **Unit Tests**: These tests check the correctness of small, isolated pieces of the codebase. They ensure that individual functions or methods work as expected.
+  
+2. **Integration Tests**: Integration tests validate interactions between different components of the application. We have integration tests that validate media processing steps, ensuring that these operations occur seamlessly and produce the expected results. The integration tests use an actual test photo and video so may take some time to process.
+
+### How to Run All Tests
+
+To run all tests in the project, use the following command:
+
+
+```bash
+pytest tests
+```
+
+### Running Only Unit Tests or Integration Tests
+
+If you're interested in running only the unit or integration tests, use the following commands:
+
+```bash
+pytest tests -m unit
+```
+
+```bash
+pytest tests -m integration
+```
+
+### Understanding Test Results
+
+Upon executing the tests, `pytest` will present a summary showcasing which tests passed and which failed. Should a test fail, an error traceback will be visible, aiding in diagnosing the issue and facilitating a fix.
+
+<br>
+
 # Pipeline Usage Sequence
 
 ### 1. Media Processing
