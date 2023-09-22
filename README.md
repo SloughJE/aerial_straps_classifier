@@ -492,5 +492,5 @@ python run_pipelines.py --train_model
     - **data/**: Scripts to process and label data.
     - **features/**: Scripts to create features for modeling.
     - **models/**: Scripts to train models and evaluate.
-    - **visualization/**: Scripts to create exploratory visualizations.
+    - **visualization/**: Scripts to create visualizations.
   - **tests/**: unit and integration tests
