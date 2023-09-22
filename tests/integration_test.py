@@ -1,9 +1,10 @@
-from shutil import copy
-import os
-import yaml
-import numpy as np
 import cv2
+import numpy as np
+import os
 import pytest
+import yaml
+from shutil import copy
+from unittest.mock import patch
 
 from src.data.process_media import process_media
 from src.data.photo_processing import mirror_photo
@@ -249,3 +250,4 @@ def test_mirror_video():
             os.remove(reduced_video_path)
         if os.path.exists(mirrored_video_path):
             os.remove(mirrored_video_path)
+

@@ -1,17 +1,19 @@
+import cv2
 import numpy as np
-import pytest
 import pandas as pd
+import pytest
+import mediapipe as mp
 
-from src.data.process_media import process_media
 from src.data.photo_processing import mirror_photo
 from src.data.video_processing import mirror_video, reduce_video_size
 from src.data.label import label_photos, label_frames, apply_mirror_labels
+from src.features.extract_landmarks import extract_landmarks_from_frame, calculate_additional_features
+from src.features.make_features import calculate_2d_angle, extract_angles, extract_spatial_features
 from unittest.mock import patch, mock_open, MagicMock, ANY, PropertyMock, Mock
-import cv2
-import numpy as np
+
 
 # pytest -s tests,  to run with print output
-# pytest tests/unit_tests.py -m unit -s
+# pytest tests -m unit -s, run only unit tests
 
 @pytest.mark.unit
 def test_mirror_photo():
@@ -359,3 +361,249 @@ def test_apply_mirror_labels(setup_files):
     non_mirrored_csv_path = output_dir.join('video_non_mirrored_sample3_labeled.csv')
     assert not non_mirrored_csv_path.check(), "CSV generated for non-mirrored file"
 
+
+@pytest.mark.unit
+def test_calculate_additional_features():
+    # Mocking some sample data
+    data = {
+        'LEFT_EAR_x': [1], 'RIGHT_EAR_x': [3],
+        'LEFT_EAR_y': [2], 'RIGHT_EAR_y': [4],
+        'LEFT_EAR_z': [1], 'RIGHT_EAR_z': [3],
+        'LEFT_SHOULDER_x': [2], 'RIGHT_SHOULDER_x': [4],
+        'LEFT_SHOULDER_y': [3], 'RIGHT_SHOULDER_y': [5],
+        'LEFT_SHOULDER_z': [2], 'RIGHT_SHOULDER_z': [4],
+        'LEFT_HIP_y': [6], 'RIGHT_HIP_y': [8],
+        'LEFT_KNEE_y': [10], 'RIGHT_KNEE_y': [12],
+        'LEFT_ELBOW_y': [7], 'RIGHT_ELBOW_y': [9],
+        'LEFT_ANKLE_y': [11], 'RIGHT_ANKLE_y': [13]
+    }
+
+    df_mock = pd.DataFrame(data)
+    
+    # Apply the function
+    df_result = calculate_additional_features(df_mock)
+
+    # Expected results
+    data_expected = {
+        'LEFT_EAR_x': [1.0], 'RIGHT_EAR_x': [3.0], 'HEAD_x': [2.0],
+        'LEFT_EAR_y': [2.0], 'RIGHT_EAR_y': [4.0], 'HEAD_y': [3.0],
+        'LEFT_EAR_z': [1.0], 'RIGHT_EAR_z': [3.0], 'HEAD_z': [2.0],
+        'LEFT_SHOULDER_x': [2.0], 'RIGHT_SHOULDER_x': [4.0], 'NECK_x': [3.0],
+        'LEFT_SHOULDER_y': [3.0], 'RIGHT_SHOULDER_y': [5.0], 'NECK_y': [4.0],
+        'LEFT_SHOULDER_z': [2.0], 'RIGHT_SHOULDER_z': [4.0], 'NECK_z': [3.0],
+        'LEFT_HIP_y': [6.0], 'RIGHT_HIP_y': [8.0], 'avg_hip_y': [7.0],
+        'LEFT_KNEE_y': [10.0], 'RIGHT_KNEE_y': [12.0], 'avg_knee_y': [11.0],
+        'LEFT_ELBOW_y': [7.0], 'RIGHT_ELBOW_y': [9.0], 'avg_elbow_y': [8.0],
+        'LEFT_ANKLE_y': [11.0], 'RIGHT_ANKLE_y': [13.0], 'avg_ankle_y': [12.0],
+        'avg_shoulder_y': [4.0]
+    }
+
+
+    df_expected = pd.DataFrame(data_expected)
+    
+    # Reorder the columns of both dataframes to be in alphabetical order
+    df_result = df_result.reindex(sorted(df_result.columns), axis=1)
+    df_expected = df_expected.reindex(sorted(df_expected.columns), axis=1)
+    df_result = df_result.astype(float)
+    df_expected = df_expected.astype(float)
+    # Using pandas' built-in testing utilities to assert that the two DataFrames are equal
+    pd.testing.assert_frame_equal(df_result, df_expected)
+
+
+@pytest.mark.unit
+def mock_pose_process(*args, **kwargs):
+    """
+    Mock function for MediaPipe's pose process.
+    
+    This function mocks the MediaPipe Pose process by returning a predefined result 
+    with a NormalizedLandmarkList containing landmarks with fixed values.
+    
+    Args:
+        *args: Variable-length argument list (not used in this mock).
+        **kwargs: Arbitrary keyword arguments (not used in this mock).
+    
+    Returns:
+        MockResult: A mocked result with predefined landmarks.
+    """
+    class Landmark:
+        def __init__(self):
+            self.x = 0.5
+            self.y = 0.5
+            self.z = 0.0
+            self.visibility = 1.0
+            self.presence = 1.0
+
+        def HasField(self, field_name):
+            return hasattr(self, field_name)
+
+    class MockResult:
+        class NormalizedLandmarkList:
+            def __init__(self, landmarks):
+                self.landmark = landmarks
+
+        pose_landmarks = NormalizedLandmarkList([Landmark() for _ in range(33)])
+
+    
+    return MockResult()
+
+
+@pytest.mark.unit
+def test_photo_vs_video_frame_processing():
+    """
+    Unit test for verifying landmark extraction consistency across photo and video frames.
+    
+    This test checks that the landmarks extracted from a mock photo and a mock video frame 
+    are consistent when using the mock_pose_process function.
+    
+    Scenarios:
+    1. Mock a photo and a video frame.
+    2. Extract landmarks from both using the mocked pose process.
+    3. Check that the extracted landmarks are consistent across both frames.
+    """
+
+    mock_photo = np.array([
+        [[255, 0, 0], [0, 255, 0], [0, 0, 255]],
+        [[255, 255, 0], [0, 255, 255], [255, 0, 255]],
+        [[0, 0, 0], [128, 128, 128], [255, 255, 255]]
+    ], dtype=np.uint8)
+
+    mock_video_frame = np.copy(mock_photo)
+
+    with patch('src.features.extract_landmarks.mp.solutions.pose.Pose.process', side_effect=mock_pose_process):
+        photo_result = extract_landmarks_from_frame(mock_photo, mp.solutions.pose.Pose())
+        video_frame_result = extract_landmarks_from_frame(mock_video_frame, mp.solutions.pose.Pose())
+
+    assert np.array_equal(photo_result[0], video_frame_result[0])
+    assert np.array_equal(photo_result[1], video_frame_result[1])
+
+
+@pytest.mark.unit
+def test_calculate_2d_angle():
+    """
+    Unit test for the `calculate_2d_angle` function.
+    
+    This function tests various scenarios to ensure the function accurately calculates the angle between three 2D points.
+    
+    Test Scenarios:
+    1. Straight line - should return an angle of 180 degrees.
+    2. Right angle - should return an angle of 90 degrees.
+    3. 45-degree line from vertical - should return an angle of 135 degrees.
+    4. Testing normalization of negative angles.
+    5. Angles greater than 180 degrees.
+    """
+    
+    # Case 1: Test for a straight line (180 degrees)
+    angle_1 = calculate_2d_angle((0, 0), (0, 1), (0, 2))
+    assert np.isclose(angle_1, 180.0), f"Expected 180, got {angle_1}"
+
+    # Case 2: Test for a right angle (90 degrees)
+    angle_2 = calculate_2d_angle((0, 0), (0, 1), (1, 1))
+    assert np.isclose(angle_2, 90.0), f"Expected 90, got {angle_2}"
+
+    # Case 3: Test for a 45 degrees angle
+    angle_3 = calculate_2d_angle((0, 0), (0, 1), (1, 2))
+    assert np.isclose(angle_3, 135.0), f"Expected 135, got {angle_3}"
+
+    # Case 4: Test for negative angles to ensure they are normalized
+    angle_4 = calculate_2d_angle((1, 1), (0, 1), (0, 0))
+    assert np.isclose(angle_4, 270), f"Expected 270, got {angle_4}"
+
+    # Case 5: Test for angles greater than 180 degrees
+    angle_5 = calculate_2d_angle((1, 1), (0, 1), (-1, 1))
+    assert np.isclose(angle_5, 180.0), f"Expected 180, got {angle_5}"
+
+
+@pytest.mark.unit
+def test_extract_angles():
+    """
+    Unit test for the extract_angles function.
+    
+    This test verifies that the angles are computed correctly for a given row of 2D landmarks.
+    """
+    # Mock row data
+    data = {
+        'LEFT_SHOULDER_x': 0, 'LEFT_SHOULDER_y': 1,
+        'LEFT_ELBOW_x': 0, 'LEFT_ELBOW_y': 0,
+        'LEFT_WRIST_x': 0, 'LEFT_WRIST_y': -1,
+        'RIGHT_SHOULDER_x': 0, 'RIGHT_SHOULDER_y': 1,
+        'RIGHT_ELBOW_x': 0, 'RIGHT_ELBOW_y': 0,
+        'RIGHT_WRIST_x': 0, 'RIGHT_WRIST_y': -1,
+        'LEFT_HIP_x': -1, 'LEFT_HIP_y': 0,
+        'RIGHT_HIP_x': 1, 'RIGHT_HIP_y': 0,
+        'LEFT_KNEE_x': -1, 'LEFT_KNEE_y': -1,
+        'RIGHT_KNEE_x': 1, 'RIGHT_KNEE_y': -1,
+        'LEFT_ANKLE_x': -1, 'LEFT_ANKLE_y': -2,
+        'RIGHT_ANKLE_x': 1, 'RIGHT_ANKLE_y': -2,
+        'HEAD_x': 0, 'HEAD_y': 2,
+        'NECK_x': 0, 'NECK_y': 1.5
+    }
+    
+    row = pd.Series(data)
+
+    # Expected angles (180 for straight lines, 90 for right angles)
+    expected_angles = {
+        'elbow_angle_left': 180.0,
+        'elbow_angle_right': 180.0,
+        'shoulder_angle_left': 315.0,  
+        'shoulder_angle_right': 45.0, 
+        'hip_angle_left': 225.0,       
+        'hip_angle_right': 135.0,      
+        'knee_angle_left': 180.0,      
+        'knee_angle_right': 180.0,    
+        'spine_angle': 296.565,
+        'torso_angle': 303.69
+    }
+
+    calculated_angles = extract_angles(row)
+    
+    for angle_name, expected_value in expected_angles.items():
+        assert np.isclose(calculated_angles[angle_name], expected_value, atol=1e-2), \
+            f"For {angle_name}: Expected {expected_value}, but got {calculated_angles[angle_name]}."
+
+
+@pytest.mark.unit
+def test_extract_spatial_features():
+    """
+    Unit test for the extract_spatial_features function.
+    
+    This test verifies that the spatial features are extracted correctly from the landmarks dataframe.
+    """
+    
+    # Sample landmark data for testing
+    df_landmarks = pd.DataFrame({
+        'LEFT_KNEE_y': [1.0, 2.0],
+        'LEFT_HIP_y': [2.0, 3.0],
+        'LEFT_SHOULDER_y': [3.0, 4.0],
+        'LEFT_ELBOW_y': [2.5, 3.5],  
+        'LEFT_WRIST_y': [2.0, 3.0],  
+        'LEFT_ANKLE_y': [0.5, 1.5],  
+        'RIGHT_KNEE_y': [2.0, 3.0],
+        'RIGHT_HIP_y': [3.0, 4.0],
+        'RIGHT_SHOULDER_y': [3.0, 4.0],
+        'RIGHT_ELBOW_y': [2.5, 3.5],
+        'RIGHT_WRIST_y': [2.0, 3.0],
+        'RIGHT_ANKLE_y': [0.5, 1.5],
+        'HEAD_y': [5.0, 6.0],
+        'avg_hip_y': [2.5, 3.5],
+        'avg_shoulder_y': [4.0, 5.0]
+    })
+    
+    result_df = extract_spatial_features(df_landmarks)
+    
+    
+    # Define expected data. For simplicity, we'll just check a subset of the data.
+    expected_data = {
+        'spatial_left_knee_to_hip': ['above', 'above'],
+        # ... [add expected data for other relationships]
+        'spatial_right_knee_to_hip': ['above', 'above'],
+        'spatial_hip_to_shoulder': ['above', 'above'],
+        'spatial_head_to_shoulder': ['below', 'below']
+    }
+    
+    # Check that each column in expected_data exists in result_df
+    for column in expected_data.keys():
+        assert column in result_df.columns, f"Missing column {column} in result_df"
+
+    # Validate the values in those columns
+    for column, expected_values in expected_data.items():
+        assert list(result_df[column]) == expected_values, f"Unexpected values in column {column}"
