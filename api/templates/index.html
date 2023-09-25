@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Image</title>
+    <title>Advanced Pose Annotation Tool</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -72,35 +72,37 @@
 </head>
 
 <body>
-    <h1>Advanced Pose Annotation Tool</h1>
-    
-    <p>Upload an image to harness MediaPipe's deep learning pose estimation model. 
-        The model detects distinct body landmarks connects them to showcase the human pose.</p>
+    <h1>Pose Annotation & Classification Tool</h1>
+    <p>This tool uses MediaPipe's deep learning pose estimation model to annotate images with body landmarks. It then extracts features for a machine learning model and classifies the pose. Additionally, a visualization chart displays the confidence level for each pose prediction.</p>
+    <p>Upload an image to proceed with pose annotation and classification.</p>
 
-<form id="uploadForm" enctype="multipart/form-data">
-    <input type="file" id="fileInput" accept="image/*" required aria-label="Select an image to upload">
-    <br>
-    <input type="submit" value="Upload">
-</form>
-
-    <div>
-        <h2>Original Image:</h2>
-        <img id="originalImage" src="" alt="Original Image" style="max-width: 500px;">
-    </div>
-
-    <div>
-        <h2>Annotated Image:</h2>
-        <img id="annotatedImage" src="" alt="Annotated Image" style="max-width: 500px;">
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="fileInput" accept="image/*" required aria-label="Select an image to upload">
         <br>
-        <a id="downloadLink" class="download-button" href="#" download>Download Annotated Image</a>
-    </div>
-    <div>
-        <h2>Predicted Pose:</h2>
-        <p id="predictedPose" style="font-size: 24px; font-weight: bold;"></p>
-    </div>
-    <div>
-        <h2>Prediction Probabilities:</h2>
-        <iframe id="poseChart" style="width:700px; height:400px;"></iframe>
+        <input type="submit" value="Upload">
+    </form>
+
+    <!-- These sections will be initially hidden -->
+    <div id="results" style="display: none;">
+        <div>
+            <h2>Original Image:</h2>
+            <img id="originalImage" src="" alt="Original Image" style="max-width: 500px;">
+        </div>
+
+        <div>
+            <h2>Annotated Image:</h2>
+            <img id="annotatedImage" src="" alt="Annotated Image" style="max-width: 500px;">
+            <br>
+            <a id="downloadLink" class="download-button" href="#" download>Download Annotated Image</a>
+        </div>
+        <br>
+        <div>
+            <h3><span>Predicted Pose: </span><span id="predictedPose" style="font-size: 24px; font-weight: bold;"></span></h3>
+        </div>
+     
+        <div>
+            <iframe id="poseChart" style="width:700px; height:400px;"></iframe>
+        </div>
     </div>
     
     
@@ -120,19 +122,19 @@
             let result = await response.json();
             if (result.original_filename && result.annotated_filename) {
                 document.getElementById("originalImage").src = "/uploaded_images/" + result.original_filename.split("/").pop();
-                
                 let annotatedImagePath = "/uploaded_images/" + result.annotated_filename.split("/").pop();
                 document.getElementById("annotatedImage").src = annotatedImagePath;
                 document.getElementById("downloadLink").href = annotatedImagePath; // set download link
                 if (result.predicted_pose) {
-               document.getElementById("predictedPose").textContent = result.predicted_pose;
+                    document.getElementById("predictedPose").textContent = result.predicted_pose;
                 }
                 if (result.chart_filename) {
                     let chartPath = "/uploaded_images/" + result.chart_filename.split("/").pop();
                     document.getElementById("poseChart").src = chartPath;
                 }
 
-
+                // Display the results section
+                document.getElementById("results").style.display = "block";
             } else {
                 alert("Failed to process image.");
             }

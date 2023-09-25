@@ -43,7 +43,7 @@ def create_probability_chart(probs, labels, filename, img_path):
 
     # Layout aesthetics
     fig.update_layout(
-        title='Predicted Pose Probabilities',
+        title='Prediction Confidence',
         xaxis=dict(
             title='Confidence Score',
             showgrid=True,
