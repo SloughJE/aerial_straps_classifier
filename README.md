@@ -487,23 +487,35 @@ python run_pipelines.py --train_model
 
 
 # Directory Structure
-
-- **/**: Project root directory
-  - **README.md**: The top-level README.
-  - **requirements.txt**: The requirements file for reproducing the analysis environment.
-   - **params.yaml**: Configuration file containing parameters for the various scripts.
-  - **Dockerfile**: File to build a Docker image of the project environment.
-  - **run_pipelines.py**: Main script to run the pipelines.
-  - **data/**: All the data used in this project (raw, interim, processed, and results).
-    - **interim/**
-    - **processed/**
-    - **raw/**
-    - **results/**
-  - **notebooks/**: exploratory notebooks
-  - **models/**: Trained and serialized models
-  - **src/**: Source code for use in this project.
-    - **data/**: Scripts to process and label data.
-    - **features/**: Scripts to create features for modeling.
-    - **models/**: Scripts to train models and evaluate.
-    - **visualization/**: Scripts to create visualizations.
-  - **tests/**: unit and integration tests
+```
+/: Project root directory
+|-- README.md: Top-level README.
+|-- requirements.txt: The requirements file.
+|-- params.yaml: Configuration file.
+|-- Dockerfile: Docker environment.
+|-- run_pipelines.py: Main script for pipelines.
+|
+|-- api/: All FastAPI related files
+|   |-- main.py: FastAPI main application file.
+|   |-- templates/: HTML templates for FastAPI.
+|   |   |-- index.html
+|   |-- uploaded_images/: Where uploaded images are saved.
+|
+|-- data/: All the data used.
+|   |-- interim/
+|   |-- processed/
+|   |-- raw/
+|   |-- results/
+|
+|-- notebooks/: Exploratory notebooks.
+|
+|-- models/: Trained and serialized models.
+|
+|-- src/: Source code for the ML part of the project.
+|   |-- data/: Scripts to process and label data.
+|   |-- features/: Scripts to create features.
+|   |-- models/: Scripts to train and evaluate models.
+|   |-- visualization/: Scripts for visualizations.
+|
+|-- tests/: Unit and integration tests.
+```
