@@ -150,13 +150,44 @@ def extract_spatial_features(df_landmarks: pd.DataFrame) -> pd.DataFrame:
     return df_landmarks[columns]
 
 
+import pandas as pd
+import os
+from typing import Dict, Union
+
+def extract_features_from_single_landmark_csv(landmarks_csv_path: str, features_directory: str) -> None:
+    """
+    Extract spatial and angle features from a single landmark CSV file and save to a new CSV file.
+    
+    Parameters:
+    - landmarks_csv_path (str): The path to the landmark CSV file.
+    - features_directory (str): The path to the directory where the feature CSV file will be saved.
+    """
+    df_landmarks = pd.read_csv(landmarks_csv_path)
+    filename = os.path.basename(landmarks_csv_path).replace('_landmarks.csv', '')
+    df_landmarks['filename'] = filename
+    df_landmarks['frame_number'] = 0
+
+    # Extract spatial features
+    df_spatial = extract_spatial_features(df_landmarks)
+
+    # Extract angles features
+    df_angles = df_landmarks.apply(extract_angles, axis=1)
+
+    # Create a new DataFrame for features
+    df_features = pd.concat([df_landmarks['filename'], df_landmarks['frame_number'], df_spatial, df_angles], axis=1)
+
+    csv_file_name = os.path.basename(landmarks_csv_path)
+    new_csv_file_name = csv_file_name.replace("_landmarks", "")
+    csv_file_path_features = os.path.join(features_directory, f"{os.path.splitext(new_csv_file_name)[0]}_features.csv")
+
+    df_features.to_csv(csv_file_path_features, index=False)
+    logger.info(f"Features extracted and saved to {csv_file_path_features}")
+
+    return df_features
+
 def extract_features_from_landmarks(params: Dict[str, Union[str, bool]]) -> None:
     """
     Extract spatial and angle features from landmark CSV files and save to new CSV files.
-
-    This function processes a list of CSV files from the provided directory containing landmarks, 
-    extracts spatial and angle features, and then saves these features to new CSV files 
-    in the specified features directory.
 
     Parameters:
     - params (Dict[str, Union[str, bool]]): A dictionary containing:
@@ -171,23 +202,9 @@ def extract_features_from_landmarks(params: Dict[str, Union[str, bool]]) -> None
     csv_files = [f for f in os.listdir(landmarks_directory) if f.endswith('_landmarks.csv')]
 
     for csv_file in csv_files:
-        df_landmarks = pd.read_csv(os.path.join(landmarks_directory, csv_file))
+        landmarks_csv_path = os.path.join(landmarks_directory, csv_file)
+        _ = extract_features_from_single_landmark_csv(landmarks_csv_path, features_directory)
 
-        # Extract spatial features
-        df_spatial = extract_spatial_features(df_landmarks)
-
-        # Extract angles features
-        df_angles = df_landmarks.apply(extract_angles, axis=1)
-
-        # Create a new DataFrame for features
-        df_features = pd.concat([df_landmarks['filename'], df_landmarks['frame_number'], df_spatial, df_angles], axis=1)
-
-        new_csv_file_name = csv_file.replace("_landmarks", "")
-        csv_file_path_features = os.path.join(features_directory, f"{os.path.splitext(new_csv_file_name)[0]}_features.csv")
-        logger.info(f"Features extracted and saved to {csv_file_path_features}")
-        df_features.to_csv(csv_file_path_features, index=False)
-
-    logger.info(f"Created features for {len(csv_files)} files")
 
 
 def combine_csv_files(params: Dict[str, str]) -> None:

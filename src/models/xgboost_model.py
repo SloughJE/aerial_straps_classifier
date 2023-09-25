@@ -216,6 +216,10 @@ def full_train_dataset_training(X_train: DataFrame, y_train: pd.Series, X_test: 
         logger.info(f"Train accuracy: {train_accuracy:.2f}")
         logger.info(f"Test accuracy: {test_accuracy:.2f}")
 
+        model_path = os.path.join(model_dir, "xgb_model.joblib")
+        joblib.dump(model, model_path)
+
+
         # Save and log the label encoder
         label_encoder = params['label_encoder']
         label_encoder_filepath = os.path.join(model_dir, 'label_encoder.pkl')
