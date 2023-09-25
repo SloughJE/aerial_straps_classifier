@@ -39,7 +39,6 @@ def save_uploaded_file(file: UploadFile, new_filename: str = "temp.jpg") -> str:
     return input_path
 
 def extract_image_features(input_path: str):
-    # As we're always using "temp.jpg", we don't need to extract the filename_without_extension
     og_img_path = input_path
     annotated_img_path = os.path.join(UPLOAD_DIR, "annotated_temp.jpg")
     df_landmarks = extract_landmarks(input_path, annotated_img_path, is_video=False, write_output=True)
