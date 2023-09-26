@@ -439,7 +439,7 @@ Upon executing the tests, `pytest` will present a summary showcasing which tests
 
 <br>
 
-## FastAPI Web App
+## 8. FastAPI Web App
 
 The project features an integrated web application built using the **FastAPI** framework. **FastAPI** is a high-performance web framework for building APIs with Python 3.7+.
 
