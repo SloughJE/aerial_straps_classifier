@@ -2,16 +2,16 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-import os
-import shutil
-from datetime import datetime
-
 from joblib import load
 from src.features.extract_landmarks import extract_landmarks
 from src.features.make_features import extract_features_from_single_landmark_csv
 from src.models.train_model import convert_spatial_features_to_categorical
 from .visualization.charts import create_probability_chart
 import logging
+import os
+import shutil
+from datetime import datetime
+from typing import Tuple, Dict, Union
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -28,17 +28,23 @@ templates = Jinja2Templates(directory="api/templates")
 
 app.mount("/uploaded_images", StaticFiles(directory=base_directory / "uploaded_images"), name="uploaded_images")
 
-@app.get("/")
+
+@app.get("/", response_model=None)
 async def serve_page():
+    """Serves the main page."""
     return templates.TemplateResponse("index.html", {"request": {}})
 
+
 def save_uploaded_file(file: UploadFile, new_filename: str = "temp.jpg") -> str:
+    """Saves the uploaded file and returns its path."""
     input_path = os.path.join(UPLOAD_DIR, new_filename)
     with open(input_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     return input_path
 
-def extract_image_features(input_path: str):
+
+def extract_image_features(input_path: str) -> Tuple[object, str, str]:
+    """Extracts features from the uploaded image."""
     og_img_path = input_path
     annotated_img_path = os.path.join(UPLOAD_DIR, "annotated_temp.jpg")
     df_landmarks = extract_landmarks(input_path, annotated_img_path, is_video=False, write_output=True)
@@ -50,11 +56,13 @@ def extract_image_features(input_path: str):
     return df_features, og_img_path, annotated_img_path
 
 
-def get_pose_prediction(df_features):
+def get_pose_prediction(df_features: object) -> Tuple[str, object, object]:
+    """Predicts the pose and returns it along with probabilities and labels."""
     xgb_model = load(MODEL_PATH)
     label_encoder = load(LABEL_ENCODER_PATH)
     features_for_prediction = df_features.drop(columns=['filename', 'frame_number'])
     features_for_prediction = convert_spatial_features_to_categorical(features_for_prediction)
+    
     pose_encoded = xgb_model.predict(features_for_prediction)
     pose_decoded = label_encoder.inverse_transform(pose_encoded)[0]
     probabilities = xgb_model.predict_proba(features_for_prediction).flatten()
@@ -63,7 +71,8 @@ def get_pose_prediction(df_features):
 
 
 @app.post("/upload/")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...)) -> Dict[str, Union[str, float]]:
+    """Handles file upload, feature extraction, pose prediction, and returns results."""
     try:
         input_path = save_uploaded_file(file)
         df_features, og_img_path, annotated_img_path = extract_image_features(input_path)

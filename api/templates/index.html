@@ -72,7 +72,7 @@
 </head>
 
 <body>
-    <h1>Pose Annotation & Classification Tool</h1>
+    <h1>Aerial Straps Pose Classification Tool</h1>
     <p>This tool uses MediaPipe's deep learning pose estimation model to annotate images of humans with body landmarks.</p>
     <p>From these landmarks, features are created for a machine learning model.</p>
     <p>Using an XGBoost model trained on aerial straps poses, the pose is then classified.</p>
@@ -80,7 +80,7 @@
     <p>For more details, code, and information, check out the <a href="https://github.com/SloughJE/aerial_straps_classifier" target="_blank">project repository on GitHub</a>.</p>
     <br>
     <p>Upload an image to proceed with pose annotation and classification.</p>
-    
+
     <form id="uploadForm" enctype="multipart/form-data">
         <input type="file" id="fileInput" accept="image/*" required aria-label="Select an image to upload">
         <br>

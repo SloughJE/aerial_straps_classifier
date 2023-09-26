@@ -2,15 +2,26 @@ import plotly.graph_objects as go
 import numpy as np
 from sklearn.cluster import MiniBatchKMeans
 import cv2
+from typing import List, Tuple
 
-def get_dominant_colors(image_path, k=5):
+
+def get_dominant_colors(image_path: str, k: int = 5) -> List[Tuple[int, int, int]]:
+    """
+    Get the dominant colors of an image using KMeans clustering.
+
+    Parameters:
+    - image_path (str): Path to the image file.
+    - k (int): Number of clusters (colors). Default is 5.
+
+    Returns:
+    - list: Dominant colors in the image.
+    """
     image = cv2.imread(image_path)
     image = cv2.resize(image, (100, 100))
-
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image = image.reshape((image.shape[0] * image.shape[1], 3))
-
-    kmeans = MiniBatchKMeans(n_clusters=k, n_init='auto')  
+    
+    kmeans = MiniBatchKMeans(n_clusters=k, n_init='auto')
     kmeans.fit(image)
 
     sorted_labels = sorted([(sum(kmeans.cluster_centers_[label]), label) for label in set(kmeans.labels_)], reverse=True)
@@ -19,7 +30,19 @@ def get_dominant_colors(image_path, k=5):
     return dominant_colors
 
 
-def create_probability_chart(probs, labels, filename, img_path):
+def create_probability_chart(probs: List[float], labels: List[str], filename: str, img_path: str) -> None:
+    """
+    Create a bar chart visualizing prediction probabilities.
+
+    Parameters:
+    - probs (list): List of prediction probabilities.
+    - labels (list): List of labels corresponding to each prediction.
+    - filename (str): Path to save the resulting chart.
+    - img_path (str): Path to the image used for prediction.
+
+    Returns:
+    - None: The function writes the chart to an HTML file.
+    """
     probs = np.array(probs)
     labels = np.array(labels)
     sorted_indices = probs.argsort()[::-1]
@@ -60,4 +83,4 @@ def create_probability_chart(probs, labels, filename, img_path):
         showlegend=False
     )
     
-    fig.write_html(filename) 
+    fig.write_html(filename)
