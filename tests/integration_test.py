@@ -6,6 +6,9 @@ import yaml
 from shutil import copy
 from unittest.mock import patch
 
+import sys
+sys.path.append("/workspaces/cv")
+
 from src.data.process_media import process_media
 from src.data.photo_processing import mirror_photo
 from src.data.video_processing import mirror_video, reduce_video_size

@@ -15,3 +15,7 @@ imageio
 imageio-ffmpeg
 optuna-dashboard
 pytest
+fastapi
+uvicorn
+python-multipart
+plotly

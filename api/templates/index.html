@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Pose Annotation Tool</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+            text-align: center;
+            padding: 5% 0;
+            margin: 5;
+        }
+
+        h1, h2, p {
+            font-weight: 300;
+            margin-bottom: 20px;
+        }
+
+        #uploadForm {
+            margin: 20px auto;
+            display: inline-block;
+        }
+
+        input[type="file"], input[type="submit"] {
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #333;
+            border: none;
+            border-radius: 5px;
+            color: #f0f0f0;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #555;
+        }
+
+        img {
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.5);
+        }
+        .download-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #333;
+            border: none;
+            border-radius: 5px;
+            color: #f0f0f0;
+            transition: background-color 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .download-button:hover {
+            background-color: #555;
+        }
+        iframe#poseChart {
+            border: none;
+            padding: 0;
+            overflow: hidden;
+        }
+
+    </style>
+</head>
+
+<body>
+    <h1>Aerial Straps Pose Classification Tool</h1>
+    <p>This tool uses MediaPipe's deep learning pose estimation model to annotate images of humans with body landmarks.</p>
+    <p>From these landmarks, features are created for a machine learning model.</p>
+    <p>Using an XGBoost model trained on aerial straps poses, the pose is then classified.</p>
+    <p>Additionally, a visualization chart displays the confidence level for each pose classification.</p>
+    <p>For more details, code, and information, check out the <a href="https://github.com/SloughJE/aerial_straps_classifier" target="_blank">project repository on GitHub</a>.</p>
+    <br>
+    <p>Upload an image to proceed with pose annotation and classification.</p>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="fileInput" accept="image/*" required aria-label="Select an image to upload">
+        <br>
+        <input type="submit" value="Upload">
+    </form>
+
+    <!-- These sections will be initially hidden -->
+    <div id="results" style="display: none;">
+        <div>
+            <h2>Original Image:</h2>
+            <img id="originalImage" src="" alt="Original Image" style="max-width: 500px;">
+        </div>
+
+        <div>
+            <h2>Annotated Image:</h2>
+            <img id="annotatedImage" src="" alt="Annotated Image" style="max-width: 500px;">
+            <br>
+            <a id="downloadLink" class="download-button" href="#" download>Download Annotated Image</a>
+        </div>
+        <br>
+        <div>
+            <h3><span>Pose Classification: </span><span id="predictedPose" style="font-size: 24px; font-weight: bold;"></span></h3>
+        </div>
+     
+        <div>
+            <iframe id="poseChart" style="width:700px; height:400px;"></iframe>
+        </div>
+    </div>
+    
+    
+    <!-- JavaScript to handle the form submission -->
+    <script>
+        document.getElementById("uploadForm").onsubmit = async (e) => {
+            e.preventDefault();
+            
+            let formData = new FormData();
+            formData.append("file", document.getElementById("fileInput").files[0]);
+            
+            let response = await fetch("/upload/", {
+                method: "POST",
+                body: formData
+            });
+            
+            let result = await response.json();
+            if (result.original_filename && result.annotated_filename) {
+                document.getElementById("originalImage").src = "/uploaded_images/" + result.original_filename.split("/").pop();
+                let annotatedImagePath = "/uploaded_images/" + result.annotated_filename.split("/").pop();
+                document.getElementById("annotatedImage").src = annotatedImagePath;
+                document.getElementById("downloadLink").href = annotatedImagePath; // set download link
+                if (result.predicted_pose) {
+                    document.getElementById("predictedPose").textContent = result.predicted_pose;
+                }
+                if (result.chart_filename) {
+                    let chartPath = "/uploaded_images/" + result.chart_filename.split("/").pop();
+                    document.getElementById("poseChart").src = chartPath;
+                }
+
+                // Display the results section
+                document.getElementById("results").style.display = "block";
+            } else {
+                alert("Failed to process image.");
+            }
+        };
+    </script>
+
+</body>
+
+</html>

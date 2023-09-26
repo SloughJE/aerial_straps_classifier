@@ -169,6 +169,15 @@ def train_production_model(X_train: DataFrame, X_test: DataFrame, y_train: pd.Se
         signature = infer_signature(input_example, model_predictions)
         mlflow.xgboost.log_model(xgb_model=prod_model, artifact_path=mlflow_prod_model_filepath, model_format='json', signature=signature)
         
+        ##### Saving model directly, will need to change when deploy!!!######
+        print("\n***Saving model directly, will need to change when deploy!!!***\n")
+        model_path = os.path.join(prod_model_dir, "xgb_prod_model.joblib")
+        joblib.dump(prod_model, model_path)
+        # Save and log the label encoder
+        label_encoder = params['label_encoder']
+        label_encoder_filepath = os.path.join(prod_model_dir, 'label_encoder.pkl')
+        joblib.dump(label_encoder, label_encoder_filepath)
+
         logger.info("Production model trained and logged to MLFlow.")
 
         # Generate and save the feature importance visualization
@@ -215,6 +224,10 @@ def full_train_dataset_training(X_train: DataFrame, y_train: pd.Series, X_test: 
         train_accuracy, test_accuracy = predict_and_evaluate(model, X_train, y_train, X_test, y_test, params)
         logger.info(f"Train accuracy: {train_accuracy:.2f}")
         logger.info(f"Test accuracy: {test_accuracy:.2f}")
+
+        model_path = os.path.join(model_dir, "xgb_dev_model.joblib")
+        joblib.dump(model, model_path)
+
 
         # Save and log the label encoder
         label_encoder = params['label_encoder']
