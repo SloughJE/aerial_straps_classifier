@@ -28,6 +28,7 @@ This project intends to demonstrates a comprehensive approach to a machine learn
       - **Hyperparameter Optimization**: Leverage the Optuna framework for hyperparameter optimization, utilizing strategies like Bayesian optimization to fine-tune model parameters and achieve optimal performance. 
       - **Optuna Dashboard**: Visualize and analyze the optimization process interactively, gaining insights into hyperparameter relationships and their impact on the model's performance.
       - **MLflow**: Integrate with MLflow for comprehensive experiment tracking, logging details of each optimization trial and facilitating a deeper understanding of the model's behavior over different parameter configurations.
+- **FastAPI Web Application**: A web-based interface using FastAPI that allows users to upload media, predicts poses in real-time, and visualizes the confidence scores for each predicted pose. 
 
 # Project Default Flow Diagram
 
@@ -63,13 +64,18 @@ graph TD;
    
    AG --> AI[Optuna: Hyperparameter Optimization];
    AI --> AJ[Optuna Dashboard: Hyperparameter Visualization];
-   AJ --> AH["MLflow: Experiment Tracking"]; 
+   AJ --> AH["MLflow:\nExperiment Tracking\nModel Registry"]; 
    
    AJ --> AK[Generate Metrics/Visualizations];
    AK --> AH; 
    
    AK --> AM[Train Production Model];
    AM --> AH;
+
+   AH --> X{"FastAPI Web App:\nUpload, Predict, & Visualize"};
+   X --> R;
+   
+   Z --> X;
 
 
 
@@ -380,7 +386,7 @@ The `generate_feature_importance_visualization` function is employed to visualiz
 These visualizations, along with various metrics, are logged as artifacts in MLFlow, ensuring a detailed record of the evaluation process is maintained and can be easily accessed and reviewed through the MLFlow UI.
 
 
-## Running Tests
+## 7. Running Tests
 
 We utilize `pytest`, a popular Python testing framework, to validate the correctness of the code in this project.
 
@@ -411,7 +417,6 @@ markers =
 
 To run all tests in the project, use the following command:
 
-
 ```bash
 pytest tests
 ```
@@ -433,6 +438,37 @@ pytest tests -m integration
 Upon executing the tests, `pytest` will present a summary showcasing which tests passed and which failed. Should a test fail, an error traceback will be visible, aiding in diagnosing the issue and facilitating a fix.
 
 <br>
+
+
+
+## FastAPI Web App
+
+The project features an integrated web application built using the **FastAPI** framework. **FastAPI** is a high-performance web framework for building APIs with Python 3.7+.
+
+### About the Web App:
+
+Our web application provides an intuitive interface that facilitates interaction with the trained pose prediction model. The process is as follows:
+
+1. **Image Upload**: Users can upload a target image for pose classification.
+2. **Landmark Extraction**: Upon submission, the app uses **MediaPipe** to extract pose landmarks from the uploaded image.
+3. **Feature Creation**: These extracted landmarks are then processed to derive joint angles and spatial relationships features for our model.
+4. **Model Prediction**: These features are then fed into our production model to classify the pose.
+5. **Result Visualization**: The results, including a pose classification confidence chart, are then displayed to the user.
+
+### Running the Web App Locally:
+
+To run the web app on your local machine, follow these steps:
+
+1. Ensure you've installed all the necessary dependencies.
+2. Navigate to the root directory of the project.
+3. Use the following command to start the server:
+
+```bash
+uvicorn api.main:app --reload
+```
+
+This will start the server, and you can access the web app at http://127.0.0.1:8000/. The --reload flag ensures the server restarts upon any code changes, which is particularly useful during development. For production use, omit the --reload flag.
+
 
 # Pipeline Usage Sequence
 
