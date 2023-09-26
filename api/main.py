@@ -8,7 +8,6 @@ from src.features.make_features import extract_features_from_single_landmark_csv
 from src.models.train_model import convert_spatial_features_to_categorical
 from .visualization.charts import create_probability_chart
 import logging
-import os
 import shutil
 from datetime import datetime
 from typing import Tuple, Dict, Union
@@ -23,8 +22,8 @@ base_directory = Path(__file__).parent
 
 # Constants
 UPLOAD_DIR = base_directory / "uploaded_images"
-MODEL_PATH = base_directory.parent / "models" / "dev" / "xgb" / "xgb_model.joblib"
-LABEL_ENCODER_PATH = base_directory.parent / "models" / "dev" / "xgb" / "label_encoder.pkl"
+MODEL_PATH = base_directory.parent / "models" / "prod" / "xgb" / "xgb_prod_model.joblib"
+LABEL_ENCODER_PATH = base_directory.parent / "models" / "prod" / "xgb" / "label_encoder.pkl"
 
 # Create the directory if it doesn't exist
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
