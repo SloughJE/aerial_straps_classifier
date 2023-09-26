@@ -4,6 +4,9 @@ import pandas as pd
 import pytest
 import mediapipe as mp
 
+import sys
+sys.path.append("/workspaces/cv")
+
 from src.data.photo_processing import mirror_photo
 from src.data.video_processing import mirror_video, reduce_video_size
 from src.data.label import label_photos, label_frames, apply_mirror_labels

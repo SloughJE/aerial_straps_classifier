@@ -439,8 +439,6 @@ Upon executing the tests, `pytest` will present a summary showcasing which tests
 
 <br>
 
-
-
 ## FastAPI Web App
 
 The project features an integrated web application built using the **FastAPI** framework. **FastAPI** is a high-performance web framework for building APIs with Python 3.7+.
@@ -554,4 +552,7 @@ python run_pipelines.py --train_model
 |   |-- visualization/: Scripts for visualizations.
 |
 |-- tests/: Unit and integration tests.
+|   |-- unit_test.py/: Unit tests.
+|   |-- integration_test.py/: Integration tests.
+
 ```
