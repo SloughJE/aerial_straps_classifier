@@ -49,7 +49,7 @@ def create_probability_chart(probs: List[float], labels: List[str], filename: st
     sorted_probs = probs[sorted_indices]
     sorted_labels = labels[sorted_indices]
     
-    dominant_colors = get_dominant_colors(img_path, len(sorted_probs))
+    dominant_colors = get_dominant_colors(img_path, len(sorted_labels))
     colors = [f'rgb({color[0]}, {color[1]}, {color[2]})' for color in dominant_colors]
 
     fig = go.Figure(data=[
@@ -61,12 +61,15 @@ def create_probability_chart(probs: List[float], labels: List[str], filename: st
                 color=colors,
                 line=dict(color=colors[0], width=1),
             ),
+            hovertemplate=(
+                "<b>Confidence Score</b>: %{x:.5f}<br>"
+                "<b>Classification</b>: %{y}<extra></extra>"
+            ),
         )
     ])
 
-    # Layout aesthetics
     fig.update_layout(
-        title='Prediction Confidence',
+        title='Classification Confidence',
         xaxis=dict(
             title='Confidence Score',
             showgrid=True,

@@ -13,7 +13,7 @@
             color: #f0f0f0;
             text-align: center;
             padding: 5% 0;
-            margin: 5;
+            margin: 5px;
         }
 
         h1, h2, p {
@@ -86,7 +86,7 @@
         <br>
         <input type="submit" value="Upload">
     </form>
-
+    <p id="feedbackMessage" style="color: red;"></p> 
     <!-- These sections will be initially hidden -->
     <div id="results" style="display: none;">
         <div>
@@ -115,17 +115,48 @@
     <script>
         document.getElementById("uploadForm").onsubmit = async (e) => {
             e.preventDefault();
-            
+
+            const fileInput = document.getElementById("fileInput");
+            const feedbackMessage = document.getElementById("feedbackMessage");
+
+
+            // Check for valid file types
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+            if (!allowedTypes.includes(fileInput.files[0].type)) {
+                feedbackMessage.textContent = "Please upload a valid JPG or PNG image.";
+                return;
+            }
+
+            // Check for file size 
+            const maxSize = 20 * 1024 * 1024; 
+            if (fileInput.files[0].size > maxSize) {
+                feedbackMessage.textContent = "Please upload an image smaller than 20MB.";
+                return;
+            }
+
+            // Show processing message
+            feedbackMessage.style.color = '#b0b0b0'; // Light gray color
+            feedbackMessage.textContent = "Annotating, creating features, and classifiying pose...";
+
             let formData = new FormData();
-            formData.append("file", document.getElementById("fileInput").files[0]);
-            
-            let response = await fetch("/upload/", {
-                method: "POST",
-                body: formData
-            });
-            
-            let result = await response.json();
-            if (result.original_filename && result.annotated_filename) {
+            formData.append("file", fileInput.files[0]);
+
+            try {
+                let response = await fetch("/upload/", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server responded with ${response.status}`);
+                }
+
+                let result = await response.json(); // Parse the result from the server
+
+                if (result.error) {
+                    feedbackMessage.style.color = 'red'; 
+                    feedbackMessage.textContent = result.error; 
+                } else if (result.original_filename && result.annotated_filename) {
                 document.getElementById("originalImage").src = "/uploaded_images/" + result.original_filename.split("/").pop();
                 let annotatedImagePath = "/uploaded_images/" + result.annotated_filename.split("/").pop();
                 document.getElementById("annotatedImage").src = annotatedImagePath;
@@ -137,11 +168,18 @@
                     let chartPath = "/uploaded_images/" + result.chart_filename.split("/").pop();
                     document.getElementById("poseChart").src = chartPath;
                 }
-
-                // Display the results section
                 document.getElementById("results").style.display = "block";
-            } else {
-                alert("Failed to process image.");
+                feedbackMessage.textContent = "";
+
+                } else {
+                    feedbackMessage.style.color = 'red';
+                    feedbackMessage.textContent = "Failed to process image.";
+                }
+
+            } catch (error) {
+                feedbackMessage.style.color = 'red';
+                feedbackMessage.textContent = "An error occurred while processing your request.";
+                console.error(error); // Logs the error for debugging
             }
         };
     </script>

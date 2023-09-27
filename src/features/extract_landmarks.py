@@ -105,7 +105,7 @@ def extract_landmarks(input_source: str,
     
     df_landmarks = pd.DataFrame(columns=columns)
     
-    with mp.solutions.pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complexity=1) as pose:
+    with mp.solutions.pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complexity=2) as pose:
 
         if is_video:
             cap = cv2.VideoCapture(input_source)
