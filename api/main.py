@@ -53,6 +53,10 @@ def extract_image_features(input_path: Path) -> Tuple[object, Path, Path]:
     annotated_img_path = UPLOAD_DIR / "annotated_temp.jpg"
     df_landmarks = extract_landmarks(str(input_path), str(annotated_img_path), is_video=False, write_output=True)
     
+    # Check if landmarks extraction is valid
+    if df_landmarks.empty or df_landmarks is None:
+        raise ValueError("Unable to detect a human or the human in the image is obscured. Please upload a clear image.")
+
     landmarks_csv_path = UPLOAD_DIR / "temp_landmarks.csv"
     df_landmarks.to_csv(landmarks_csv_path, index=False)
     
@@ -84,7 +88,7 @@ async def upload_file(file: UploadFile = File(...)) -> Dict[str, Union[str, floa
         create_probability_chart(probabilities, pose_labels, str(chart_filename), str(og_img_path))
 
         current_timestamp = datetime.now().timestamp()
-
+        
         return {
             "original_filename": f"{input_path}?t={current_timestamp}",
             "annotated_filename": f"{annotated_img_path}?t={current_timestamp}",
@@ -94,5 +98,6 @@ async def upload_file(file: UploadFile = File(...)) -> Dict[str, Union[str, floa
 
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
+        return {
+            "error": str(e)  # Sending the error to the client
+        }
