@@ -22,7 +22,7 @@ app = FastAPI()
 # Constants
 base_directory = Path(__file__).parent
 
-UPLOAD_DIR = base_directory / "uploaded_images"
+UPLOAD_DIR = base_directory / "image_processing"
 MODEL_PATH = base_directory.parent / "models" / "prod" / "xgb" / "xgb_prod_model.joblib"
 LABEL_ENCODER_PATH = base_directory.parent / "models" / "prod" / "xgb" / "label_encoder.pkl"
 
@@ -35,7 +35,7 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 xgb_model = load(MODEL_PATH)
 label_encoder = load(LABEL_ENCODER_PATH)
 
-app.mount("/uploaded_images", StaticFiles(directory=UPLOAD_DIR), name="uploaded_images")
+app.mount("/image_processing", StaticFiles(directory=UPLOAD_DIR), name="image_processing")
 
 
 @app.get("/", response_model=None)

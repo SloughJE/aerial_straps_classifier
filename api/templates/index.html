@@ -157,15 +157,15 @@
                     feedbackMessage.style.color = 'red'; 
                     feedbackMessage.textContent = result.error; 
                 } else if (result.original_filename && result.annotated_filename) {
-                document.getElementById("originalImage").src = "/uploaded_images/" + result.original_filename.split("/").pop();
-                let annotatedImagePath = "/uploaded_images/" + result.annotated_filename.split("/").pop();
+                document.getElementById("originalImage").src = "/image_processing/" + result.original_filename.split("/").pop();
+                let annotatedImagePath = "/image_processing/" + result.annotated_filename.split("/").pop();
                 document.getElementById("annotatedImage").src = annotatedImagePath;
                 document.getElementById("downloadLink").href = annotatedImagePath; // set download link
                 if (result.predicted_pose) {
                     document.getElementById("predictedPose").textContent = result.predicted_pose;
                 }
                 if (result.chart_filename) {
-                    let chartPath = "/uploaded_images/" + result.chart_filename.split("/").pop();
+                    let chartPath = "/image_processing/" + result.chart_filename.split("/").pop();
                     document.getElementById("poseChart").src = chartPath;
                 }
                 document.getElementById("results").style.display = "block";
