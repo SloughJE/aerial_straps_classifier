@@ -61,12 +61,16 @@ def create_probability_chart(probs: List[float], labels: List[str], filename: st
                 color=colors,
                 line=dict(color=colors[0], width=1),
             ),
+            hovertemplate=(
+                "<b>Confidence Score</b>: %{x:.5f}<br>"
+                "<b>Classification</b>: %{y}<extra></extra>"
+            ),
         )
     ])
 
     # Layout aesthetics
     fig.update_layout(
-        title='Prediction Confidence',
+        title='Classification Confidence',
         xaxis=dict(
             title='Confidence Score',
             showgrid=True,
