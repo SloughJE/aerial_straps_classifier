@@ -32,6 +32,10 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 TEMPLATES_DIR = base_directory / "templates"
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
+# Loading the model and encoder when the app starts
+xgb_model = load(MODEL_PATH)
+label_encoder = load(LABEL_ENCODER_PATH)
+
 # Mount static files using the absolute path
 app.mount("/uploaded_images", StaticFiles(directory=UPLOAD_DIR), name="uploaded_images")
 
@@ -63,10 +67,9 @@ def extract_image_features(input_path: Path) -> Tuple[object, Path, Path]:
     df_features = extract_features_from_single_landmark_csv(str(landmarks_csv_path), str(UPLOAD_DIR))
     return df_features, og_img_path, annotated_img_path
 
-def get_pose_prediction(df_features: object) -> Tuple[str, object, object]:
+def get_pose_prediction(df_features: object, xgb_model, label_encoder) -> Tuple[str, object, object]:
     """Predicts the pose and returns it along with probabilities and labels."""
-    xgb_model = load(MODEL_PATH)
-    label_encoder = load(LABEL_ENCODER_PATH)
+    
     features_for_prediction = df_features.drop(columns=['filename', 'frame_number'])
     features_for_prediction = convert_spatial_features_to_categorical(features_for_prediction)
     
@@ -76,13 +79,15 @@ def get_pose_prediction(df_features: object) -> Tuple[str, object, object]:
     pose_labels = label_encoder.classes_
     return pose_decoded, probabilities, pose_labels
 
+
+
 @app.post("/upload/")
-async def upload_file(file: UploadFile = File(...)) -> Dict[str, Union[str, float]]:
+async def process_image(file: UploadFile = File(...)) -> Dict[str, Union[str, float]]:
     """Handles file upload, feature extraction, pose prediction, and returns results."""
     try:
         input_path = save_uploaded_file(file)
         df_features, og_img_path, annotated_img_path = extract_image_features(input_path)
-        pose_decoded, probabilities, pose_labels = get_pose_prediction(df_features)
+        pose_decoded, probabilities, pose_labels = get_pose_prediction(df_features, xgb_model, label_encoder)
         
         chart_filename = UPLOAD_DIR / "temp_chart.html"
         create_probability_chart(probabilities, pose_labels, str(chart_filename), str(og_img_path))
