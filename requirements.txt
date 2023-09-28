@@ -6,8 +6,6 @@ opencv-python-headless
 mediapipe
 protobuf<=3.20.*
 xgboost
-imageio
-imageio-ffmpeg
 fastapi
 uvicorn
 python-multipart
