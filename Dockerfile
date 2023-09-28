@@ -17,10 +17,9 @@ RUN apt-get -y update && \
     rm -rf /var/lib/apt/lists/*
 
 # Installing Python requirements
-COPY requirements${APP_ENVIRONMENT:=}.txt /code/
+COPY requirements${APP_ENVIRONMENT:+_dev}.txt /code/
 RUN pip install --upgrade pip && \
-    pip install -r requirements${APP_ENVIRONMENT:=}.txt
-
+    pip install -r requirements${APP_ENVIRONMENT:+_dev}.txt
 
 # Conditionally setting the FastAPI run command for production
 CMD if [ "$APP_ENVIRONMENT" = "production" ]; then uvicorn api.main:app --host 0.0.0.0 --port 80; else /bin/bash; fi
