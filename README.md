@@ -533,7 +533,7 @@ python run_pipelines.py --train_model
 |   |-- main.py: FastAPI main application file.
 |   |-- templates/: HTML templates for FastAPI.
 |   |   |-- index.html
-|   |-- uploaded_images/: Where uploaded images are saved.
+|   |-- image_processing/: Where uploaded images are saved and processed.
 |
 |-- data/: All the data used.
 |   |-- interim/
