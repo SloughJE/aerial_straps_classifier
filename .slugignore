@@ -1,0 +1,6 @@
+# folders or fileypes to ignore
+*.psd
+*.pdf
+*.md
+*.ipynb
+/tests
