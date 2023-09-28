@@ -23,4 +23,4 @@ RUN pip install --upgrade pip && \
     pip install -r requirements${APP_ENVIRONMENT:+_dev}.txt
 
 # Conditionally setting the FastAPI run command for production
-CMD if [ "$APP_ENVIRONMENT" = "production" ]; then uvicorn api.main:app --host 0.0.0.0 --port 80; else /bin/bash; fi
+CMD if [ "$APP_ENVIRONMENT" = "production" ]; then uvicorn api.main:app --host 0.0.0.0 --port $PORT; else /bin/bash; fi
