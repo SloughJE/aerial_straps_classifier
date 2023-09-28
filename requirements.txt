@@ -10,3 +10,4 @@ fastapi
 uvicorn
 python-multipart
 plotly
+jinja2

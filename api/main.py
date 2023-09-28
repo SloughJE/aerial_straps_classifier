@@ -7,12 +7,12 @@ import uuid
 import time
 from src.features.extract_landmarks import extract_landmarks
 from src.features.make_features import extract_features_from_single_landmark_csv
-from src.models.train_model import convert_spatial_features_to_categorical
 from .visualization.charts import create_probability_chart
 import logging
 import shutil
 from datetime import datetime
 from typing import Tuple, Dict, Union
+from pandas import DataFrame
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -42,6 +42,27 @@ app.mount("/image_processing", StaticFiles(directory=UPLOAD_DIR), name="image_pr
 async def serve_page():
     """Serves the main page."""
     return templates.TemplateResponse("index.html", {"request": {}})
+
+
+def convert_spatial_features_to_categorical(df: DataFrame) -> DataFrame:
+    """
+    Convert all spatial features in the DataFrame to the 'categorical' data type.
+    
+    Parameters:
+    - df (pd.DataFrame): The input DataFrame containing spatial features with "spatial_" prefix in the column names.
+    
+    Returns:
+    - pd.DataFrame: The DataFrame with spatial features converted to 'categorical' data type.
+    """
+    logger.info("Converting spatial columns to categorical")
+    
+    # Find the spatial columns
+    spatial_columns = df.filter(regex='^spatial_', axis=1).columns
+    
+    # Convert all the spatial columns to 'category' type using the apply method
+    df[spatial_columns] = df[spatial_columns].apply(lambda col: col.astype('category'))
+    
+    return df
 
 
 def cleanup_files(directory: Path, age_minutes: int = 1) -> None:
