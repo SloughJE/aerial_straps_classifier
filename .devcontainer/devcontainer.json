@@ -4,7 +4,7 @@
     "dockerFile": "../Dockerfile",
     "build": {
         "args": {
-            "ENVIRONMENT": "development"
+            "ENVIRONMENT": "production"
         }
     },
     "extensions": ["ms-python.python", "ms-toolsai.jupyter"]
