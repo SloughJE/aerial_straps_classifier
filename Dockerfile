@@ -13,6 +13,7 @@ ENV APP_ENVIRONMENT $ENVIRONMENT
 # Installing dependencies
 RUN apt-get -y update && \
     apt-get -y install libgl1-mesa-glx libglib2.0-0 gcc python3-dev && \
+    if [ "$APP_ENVIRONMENT" != "production" ]; then apt-get -y install git ffmpeg; fi && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

@@ -7,6 +7,5 @@
             "ENVIRONMENT": "development"
         }
     },
-    "extensions": ["ms-python.python", "ms-toolsai.jupyter"],
-    // The rest of your settings remain unchanged.
+    "extensions": ["ms-python.python", "ms-toolsai.jupyter"]
 }
