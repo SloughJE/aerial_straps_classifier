@@ -21,6 +21,8 @@ COPY requirements.txt /code/
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
+# copies all code into the docker container
+COPY . /code/ 
 # Conditionally setting the FastAPI run command for production
 #CMD if [ "$APP_ENVIRONMENT" = "production" ]; then uvicorn api.main:app --host 0.0.0.0 --port $PORT; else /bin/bash; fi
-CMD uvicorn api.main:app --host 0.0.0.0 --port $PORT
+CMD ["sh", "./start.sh"]
