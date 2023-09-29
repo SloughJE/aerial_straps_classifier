@@ -1,0 +1,11 @@
+notebooks/
+data/
+mlruns/
+mlartifacts/
+assets/
+tests/
+src/models/
+*.pyc
+*.pdf
+*.ipynb
+*.md
