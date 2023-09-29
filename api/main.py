@@ -37,7 +37,7 @@ label_encoder = load(LABEL_ENCODER_PATH)
 
 app.mount("/image_processing", StaticFiles(directory=UPLOAD_DIR), name="image_processing")
 
-
+print("starting app")
 @app.get("/", response_model=None)
 async def serve_page():
     """Serves the main page."""
@@ -124,6 +124,8 @@ def get_pose_prediction(df_features: object, xgb_model, label_encoder) -> Tuple[
 async def process_image(background_tasks: BackgroundTasks, file: UploadFile = File(...)) -> Dict[str, Union[str, float]]:
     """Handles file upload, feature extraction, pose prediction, and returns results."""
     try:
+        print("try app")
+
         input_path = save_uploaded_file(file)
         file_stem = input_path.stem
 
