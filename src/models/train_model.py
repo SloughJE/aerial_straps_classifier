@@ -7,10 +7,10 @@ import mlflow
 from pandas import DataFrame
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 from mlflow.data.pandas_dataset import PandasDataset
 
 from .xgboost_model import train_xgb
+from .label_encoder import CustomLabelEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ def split_train_test(df: DataFrame, params: Dict[str, Any]) -> Tuple[DataFrame, 
     return train_df, test_df
 
 
-def encode_labels(train_df: DataFrame, test_df: DataFrame, target_column: str) -> Tuple[DataFrame, DataFrame, LabelEncoder]:
+def encode_labels(train_df, test_df, target_column):
     """
     Encodes the target labels to numerical values.
     
@@ -94,12 +94,13 @@ def encode_labels(train_df: DataFrame, test_df: DataFrame, target_column: str) -
     Returns:
     - train_df (DataFrame): Training data with encoded target.
     - test_df (DataFrame): Test data with encoded target.
-    - le (LabelEncoder): Fitted label encoder.
+    - encoder (CustomLabelEncoder): Fitted label encoder.
     """
-    le = LabelEncoder()
-    train_df[target_column] = le.fit_transform(train_df[target_column])
-    test_df[target_column] = le.transform(test_df[target_column])  # Use transform, not fit_transform for the test set
-    return train_df, test_df, le
+    encoder = CustomLabelEncoder()
+    train_df[target_column] = encoder.fit_transform(train_df[target_column])
+    test_df[target_column] = encoder.transform(test_df[target_column])
+    return train_df, test_df, encoder
+
 
 
 def preprocess_data(train_df: DataFrame, test_df: DataFrame, 

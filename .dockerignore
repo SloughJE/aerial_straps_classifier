@@ -5,7 +5,11 @@ mlartifacts/
 assets/
 tests/
 src/models/
+.pytest_cache/
 *.pyc
 *.pdf
 *.ipynb
 *.md
+models/dev/
+*.log
+.git/

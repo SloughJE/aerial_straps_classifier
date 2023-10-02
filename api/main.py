@@ -1,3 +1,4 @@
+import json
 from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -13,6 +14,7 @@ import shutil
 from datetime import datetime
 from typing import Tuple, Dict, Union
 from pandas import DataFrame
+from src.models.label_encoder import CustomLabelEncoder
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,8 +26,7 @@ base_directory = Path(__file__).parent
 
 UPLOAD_DIR = base_directory / "image_processing"
 MODEL_PATH = base_directory.parent / "models" / "prod" / "xgb" / "xgb_prod_model.joblib"
-LABEL_ENCODER_PATH = base_directory.parent / "models" / "prod" / "xgb" / "label_encoder.pkl"
-
+LABEL_ENCODER_PATH = base_directory.parent / "models" / "prod" / "xgb" / "label_encoder.json"
 # Create the directory if it doesn't exist
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -33,7 +34,15 @@ TEMPLATES_DIR = base_directory / "templates"
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 xgb_model = load(MODEL_PATH)
-label_encoder = load(LABEL_ENCODER_PATH)
+
+# Load the mappings from the JSON file
+with open(LABEL_ENCODER_PATH, 'r') as f:
+    mappings = json.load(f)
+
+# Initialize an instance of CustomLabelEncoder
+label_encoder = CustomLabelEncoder()
+label_encoder.set_mappings(mappings['label_to_int'], mappings['int_to_label'])
+
 
 app.mount("/image_processing", StaticFiles(directory=UPLOAD_DIR), name="image_processing")
 

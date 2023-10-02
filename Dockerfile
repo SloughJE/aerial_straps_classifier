@@ -2,15 +2,14 @@
 FROM python:3.8.12-slim-buster
 
 # Build-time argument for the environment setting
-#ARG ENVIRONMENT=production
-
+ARG ENVIRONMENT=production
+ENV APP_ENVIRONMENT $ENVIRONMENT
 # Create a working directory
 RUN mkdir /code 
 WORKDIR /code
 
 # Environment settings
 ENV PYTHONUNBUFFERED 1
-ENV APP_ENVIRONMENT $ENVIRONMENT
 
 # Installing dependencies
 # Chain commands to reduce layers and clean up in the same step
@@ -21,15 +20,15 @@ RUN apt-get update && \
 
 # Copy just the requirements file and install dependencies
 # Use --no-cache-dir to avoid caching and reduce image size
-COPY requirements.txt /code/
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt requirements_dev.txt /code/
+# Conditionally install development or production requirements
+RUN if [ "$ENVIRONMENT" = "development" ]; then \
+        pip install --no-cache-dir -r requirements_dev.txt; \
+    else \
+        pip install --no-cache-dir -r requirements.txt; \
+    fi
 
-# Copy the rest of the code into the docker container
-COPY . /code/
-
-# Make the start script executable
-RUN chmod +x /code/start.sh
-
-# Set the command to run the start script
-CMD ["sh", "/code/start.sh"]
+# Conditionally copy code and set up start script
+COPY . /source
+RUN chmod +x /source/setup.sh
+CMD ["/source/setup.sh"]

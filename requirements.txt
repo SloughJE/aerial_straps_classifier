@@ -1,6 +1,5 @@
 numpy
 pandas
-scikit-learn
 pyaml
 opencv-python-headless
 mediapipe
@@ -11,3 +10,4 @@ uvicorn
 python-multipart
 plotly
 jinja2
+joblib

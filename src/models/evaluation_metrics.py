@@ -16,6 +16,8 @@ from sklearn.metrics import (
     roc_curve,
 )
 
+from .label_encoder import CustomLabelEncoder
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,14 +28,16 @@ def generate_roc_curves_and_save(predictions_dir: str, model_type: str, data_typ
     Args:
     - predictions_dir (str): Directory to save the visualization.
     - model_type (str): Type of the model.
-    - label_encoder (LabelEncoder): The label encoder.
+    - label_encoder (CustomLabelEncoder): The label encoder.
     - y_test (Series): True labels.
     - y_prob (np.ndarray): Predicted probabilities.
 
     Returns:
     - None
     """
-    n_classes = len(label_encoder.classes_)
+    
+    n_classes = len(label_encoder.label_to_int)  
+
     plt.figure(figsize=(10, 8))
     
     fpr = {}
@@ -77,7 +81,7 @@ def generate_pr_curves_and_save(predictions_dir: str, model_type: str, data_type
     Args:
     - predictions_dir (str): Directory to save the visualization.
     - model_type (str): Type of the model.
-    - label_encoder (LabelEncoder): The label encoder.
+    - label_encoder (CustomLabelEncoder): The label encoder.
     - y_test (DataFrame): True labels.
     - y_prob (np.ndarray): Predicted probabilities.
 
@@ -121,7 +125,7 @@ def generate_visualizations_and_save_metrics(predictions_dir: str, model_type: s
     Args:
     - predictions_dir (str): Directory to save visualizations and metrics.
     - model_type (str): Type of the model.
-    - label_encoder (LabelEncoder): The label encoder.
+    - label_encoder (CustomLabelEncoder): The label encoder.
     - y_test (DataFrame): True labels.
     - y_pred (np.ndarray): Predicted labels.
 
