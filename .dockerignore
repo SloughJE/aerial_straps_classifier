@@ -1,3 +1,4 @@
+
 notebooks/
 data/
 mlruns/
@@ -5,6 +6,7 @@ mlartifacts/
 assets/
 tests/
 src/models/
+src/data/
 .pytest_cache/
 *.pyc
 *.pdf

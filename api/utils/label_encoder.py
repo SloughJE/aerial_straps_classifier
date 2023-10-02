@@ -1,3 +1,4 @@
+
 class CustomLabelEncoder:
     def __init__(self):
         self.label_to_int = {}
@@ -13,7 +14,8 @@ class CustomLabelEncoder:
         return [self.label_to_int.get(label, -1) for label in labels]
 
     def inverse_transform(self, ints):
-        return [self.int_to_label.get(i, "Unknown") for i in ints]
+        transformed_labels = [self.int_to_label.get(str(i), "Unknown") for i in ints]
+        return transformed_labels
 
     def fit_transform(self, labels):
         self.fit(labels)
@@ -22,4 +24,5 @@ class CustomLabelEncoder:
     def set_mappings(self, label_to_int, int_to_label):
         self.label_to_int = label_to_int
         self.int_to_label = int_to_label
-        self.classes_ = list(label_to_int.keys())  # Storing the class names
+        self.classes_ = [int_to_label[str(i)] for i in range(len(int_to_label))]  # Ensuring correct order
+

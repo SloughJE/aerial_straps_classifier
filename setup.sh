@@ -1,9 +1,7 @@
 #!/bin/bash
 
 if [ "$ENVIRONMENT" = "development" ]; then
-    echo "Development environment, skipping copy and script setup"
+    echo "Development environment, skipping script setup"
 else
-    cp -r /source/* /code/
-    chmod +x /code/start.sh
-    /code/start.sh
+    ./start.sh
 fi

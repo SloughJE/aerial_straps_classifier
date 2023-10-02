@@ -7,5 +7,6 @@
             "ENVIRONMENT": "production"
         }
     },
-    "extensions": ["ms-python.python", "ms-toolsai.jupyter"]
+    "extensions": ["ms-python.python", "ms-toolsai.jupyter"],
+    "runArgs": ["-e", "ENVIRONMENT=production"]
 }
