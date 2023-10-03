@@ -563,13 +563,13 @@ The separation of `setup.sh` and `start.sh` might seem a bit redundant given the
   - Once built, images need to be pushed to Google Container Registry before they can be deployed to GCR.
   - Deploying to GCR involves specifying the image to use, the platform (managed or Anthos), and the region.
 
-### Note
+#### Note
 Ensure to replace placeholders like `PROJECT_ID`, `IMAGE_NAME`, and `REGION` with actual values relevant to your project when executing commands.
 
 
+### Deployment Steps 
 Deploying the application using Docker and Google Cloud Run (GCR) involves building a Docker image, pushing it to Google Container Registry, and then deploying it to Google Cloud Run. Below are the steps and explanations for each command used in the process.
 
-### Deployment Steps 
 ### 9.1 Build the Docker Image
 
 ```bash
@@ -598,7 +598,7 @@ gcloud run deploy SERVICE_NAME --image gcr.io/PROJECT_ID/IMAGE_NAME --platform m
 - gcloud run deploy SERVICE_NAME: Deploys the application to Google Cloud Run with the service name SERVICE_NAME.
 - --image gcr.io/PROJECT_ID/IMAGE_NAME: Specifies the Docker image to deploy from GCR.
 - --platform managed: Indicates that the platform is fully managed by Google Cloud.
-- --region REGION: Specifies the region where the service will be deployed.
+- --region REGION: Specifies the region where the service will be deployed (e.g. `us-east1`).
 
 ### Additional Commands for Debugging
 
