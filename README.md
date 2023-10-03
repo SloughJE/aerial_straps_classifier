@@ -569,7 +569,8 @@ Ensure to replace placeholders like `PROJECT_ID`, `IMAGE_NAME`, and `REGION` wit
 
 Deploying the application using Docker and Google Cloud Run (GCR) involves building a Docker image, pushing it to Google Container Registry, and then deploying it to Google Cloud Run. Below are the steps and explanations for each command used in the process.
 
-### 9.1 Building the Docker Image
+### Deployment Steps 
+### 9.1 Build the Docker Image
 
 ```bash
 docker build --platform linux/amd64 -t gcr.io/PROJECT_ID/IMAGE_NAME .
@@ -580,7 +581,7 @@ docker build --platform linux/amd64 -t gcr.io/PROJECT_ID/IMAGE_NAME .
 - -t gcr.io/PROJECT_ID/IMAGE_NAME: Tags the Docker image with a name to refer to it later. The name is a path to the Google Container Registry (GCR) where the image will be stored.
 - .: Indicates that the build context is the current directory.
 
-### 9.2 Pushing the Docker Image to Google Container Registry (GCR)
+### 9.2 Push the Docker Image to Google Container Registry (GCR)
 
 ```bash
 docker push gcr.io/PROJECT_ID/IMAGE_NAME
@@ -588,7 +589,7 @@ docker push gcr.io/PROJECT_ID/IMAGE_NAME
 - docker push: This command pushes a Docker image to a remote registry.
 - gcr.io/PROJECT_ID/IMAGE_NAME: Specifies the name (path) of the image, pointing to the GCR repository.
 
-### 9.3 Deploying the Docker Image using Google Cloud Run
+### 9.3 Deploy the Docker Image using Google Cloud Run
 
 ```bash
 gcloud run deploy SERVICE_NAME --image gcr.io/PROJECT_ID/IMAGE_NAME --platform managed --region REGION
@@ -623,9 +624,6 @@ chmod +x start.sh
 Now, the application should be running inside the Docker container and accessible at http://127.0.0.1:LOCAL_PORT/.
 
 Note: Ensure that the port you map to the host (e.g., LOCAL_PORT) is not being used by other applications to avoid conflicts. If Visual Studio Code or any other application is using port 8000, you can use a different port on the host, as shown in the example above.
-
-### Full Commands
-
 
 
 # Pipeline Usage Sequence
