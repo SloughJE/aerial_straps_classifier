@@ -16,7 +16,7 @@ from sklearn.metrics import (
     roc_curve,
 )
 
-from .label_encoder import CustomLabelEncoder
+from ..utils.processing_utils import CustomLabelEncoder
 
 logger = logging.getLogger(__name__)
 
