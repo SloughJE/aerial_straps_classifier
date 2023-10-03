@@ -10,8 +10,7 @@ from sklearn.model_selection import train_test_split
 from mlflow.data.pandas_dataset import PandasDataset
 
 from .xgboost_model import train_xgb
-from .label_encoder import CustomLabelEncoder
-
+from ..utils.processing_utils import CustomLabelEncoder, convert_spatial_features_to_categorical
 logger = logging.getLogger(__name__)
 
 
@@ -22,27 +21,6 @@ MODEL_MAPPER = {
     # 'svm': train_svm,
     # 'neural_net': train_neural_net,
 }
-
-
-def convert_spatial_features_to_categorical(df: DataFrame) -> DataFrame:
-    """
-    Convert all spatial features in the DataFrame to the 'categorical' data type.
-    
-    Parameters:
-    - df (pd.DataFrame): The input DataFrame containing spatial features with "spatial_" prefix in the column names.
-    
-    Returns:
-    - pd.DataFrame: The DataFrame with spatial features converted to 'categorical' data type.
-    """
-    logger.info("Converting spatial columns to categorical")
-    
-    # Find the spatial columns
-    spatial_columns = df.filter(regex='^spatial_', axis=1).columns
-    
-    # Convert all the spatial columns to 'category' type using the apply method
-    df[spatial_columns] = df[spatial_columns].apply(lambda col: col.astype('category'))
-    
-    return df
 
 
 def split_train_test(df: DataFrame, params: Dict[str, Any]) -> Tuple[DataFrame, DataFrame]:

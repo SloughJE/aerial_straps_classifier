@@ -7,6 +7,7 @@ assets/
 tests/
 src/models/
 src/data/
+src/visualizations/
 .pytest_cache/
 *.pyc
 *.pdf

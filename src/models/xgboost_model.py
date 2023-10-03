@@ -15,8 +15,8 @@ from sklearn.model_selection import cross_val_score
 from xgboost import XGBClassifier
 
 from .evaluation_metrics import generate_feature_importance_visualization
-from .utils import predict_and_evaluate
-from .label_encoder import CustomLabelEncoder
+from .model_utils import predict_and_evaluate
+from ..utils.processing_utils import CustomLabelEncoder
 
 logger = logging.getLogger(__name__)
 

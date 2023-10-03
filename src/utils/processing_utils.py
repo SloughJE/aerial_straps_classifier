@@ -1,3 +1,7 @@
+import logging
+from pandas import DataFrame
+
+logger = logging.getLogger(__name__)
 
 class CustomLabelEncoder:
     def __init__(self):
@@ -26,3 +30,23 @@ class CustomLabelEncoder:
         self.int_to_label = int_to_label
         self.classes_ = [int_to_label[str(i)] for i in range(len(int_to_label))]  # Ensuring correct order
 
+
+def convert_spatial_features_to_categorical(df: DataFrame) -> DataFrame:
+    """
+    Convert all spatial features in the DataFrame to the 'categorical' data type.
+    
+    Parameters:
+    - df (pd.DataFrame): The input DataFrame containing spatial features with "spatial_" prefix in the column names.
+    
+    Returns:
+    - pd.DataFrame: The DataFrame with spatial features converted to 'categorical' data type.
+    """
+    logger.info("Converting spatial columns to categorical")
+    
+    # Find the spatial columns
+    spatial_columns = df.filter(regex='^spatial_', axis=1).columns
+    
+    # Convert all the spatial columns to 'category' type using the apply method
+    df[spatial_columns] = df[spatial_columns].apply(lambda col: col.astype('category'))
+    
+    return df
