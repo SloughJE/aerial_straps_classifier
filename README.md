@@ -72,11 +72,13 @@ graph TD;
    AK --> AM[Train Production Model];
    AM --> AH;
 
-   AH --> X{"FastAPI Web App:\nUpload, Predict, & Visualize"};
+   AH --> X{"FastAPI Web App:\nUpload, Annotate, Classify, & Visualize"};
    X --> R;
    
    Z --> X;
-
+   
+   X --> Y[Docker Build: Create Image];
+   Y --> W[Push and Deploy to Google Cloud Run];
 
 
 ```
