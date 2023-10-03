@@ -78,7 +78,7 @@ graph TD;
    Z --> X;
    
    X --> Y[Docker Build: Create Image];
-   Y --> W[Push and Deploy to Google Cloud Run];
+   Y --> W[Deploy to Google Cloud Run];
 
 
 ```
