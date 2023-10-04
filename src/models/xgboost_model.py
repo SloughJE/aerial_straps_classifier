@@ -12,24 +12,25 @@ from mlflow.data.pandas_dataset import PandasDataset
 from mlflow.models.signature import infer_signature
 from pandas import DataFrame
 from sklearn.model_selection import cross_val_score
-from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier
 
 from .evaluation_metrics import generate_feature_importance_visualization
-from .utils import predict_and_evaluate
+from .model_utils import predict_and_evaluate
+from ..utils.processing_utils import CustomLabelEncoder
 
 logger = logging.getLogger(__name__)
 
 
-def get_class_weights(le: LabelEncoder) -> dict:
+def get_class_weights(le: CustomLabelEncoder) -> dict:
     # Get encoded label for 'other pose or transition'
-    encoded_other = le.transform(['other pose or transition'])[0]  # Assuming 'o' is the label for 'other pose or transition'
+    encoded_other = le.label_to_int['other pose or transition']  # Directly access the mapping
     
     # Create weight dict
     # For example, setting the weight for 'other pose or transition' to x and y for others
-    weights = {label: 50 if label != encoded_other else 1 for label in range(len(le.classes_))}
+    weights = {label: 50 if label != encoded_other else 1 for label in range(len(le.label_to_int))}
     
     return weights
+
 
 
 def optimize_hyperparams_optune(X_train: DataFrame, y_train: pd.Series, 
@@ -173,10 +174,17 @@ def train_production_model(X_train: DataFrame, X_test: DataFrame, y_train: pd.Se
         print("\n***Saving model directly, will need to change when deploy!!!***\n")
         model_path = os.path.join(prod_model_dir, "xgb_prod_model.joblib")
         joblib.dump(prod_model, model_path)
+
         # Save and log the label encoder
         label_encoder = params['label_encoder']
-        label_encoder_filepath = os.path.join(prod_model_dir, 'label_encoder.pkl')
-        joblib.dump(label_encoder, label_encoder_filepath)
+        label_encoder_filepath = os.path.join(prod_model_dir, 'label_encoder.json')
+
+        # Save the mappings as JSON
+        with open(label_encoder_filepath, 'w') as f:
+            json.dump({
+                'label_to_int': label_encoder.label_to_int,
+                'int_to_label': label_encoder.int_to_label
+            }, f)
 
         logger.info("Production model trained and logged to MLFlow.")
 
@@ -231,8 +239,15 @@ def full_train_dataset_training(X_train: DataFrame, y_train: pd.Series, X_test: 
 
         # Save and log the label encoder
         label_encoder = params['label_encoder']
-        label_encoder_filepath = os.path.join(model_dir, 'label_encoder.pkl')
-        joblib.dump(label_encoder, label_encoder_filepath)
+        label_encoder_filepath = os.path.join(model_dir, 'label_encoder.json')
+
+        # Save the mappings as JSON
+        with open(label_encoder_filepath, 'w') as f:
+            json.dump({
+                'label_to_int': label_encoder.label_to_int,
+                'int_to_label': label_encoder.int_to_label
+            }, f)
+
         mlflow.log_artifact(label_encoder_filepath)
 
         X_test = X_test.drop(columns=['filename', 'frame_number'])

@@ -72,11 +72,13 @@ graph TD;
    AK --> AM[Train Production Model];
    AM --> AH;
 
-   AH --> X{"FastAPI Web App:\nUpload, Predict, & Visualize"};
+   AH --> X{"FastAPI Web App:\nUpload, Annotate, Classify, & Visualize"};
    X --> R;
    
    Z --> X;
-
+   
+   X --> Y[Docker Build: Create Image];
+   Y --> W[Deploy to Google Cloud Run];
 
 
 ```
@@ -467,6 +469,169 @@ uvicorn api.main:app --reload
 
 This will start the server, and you can access the web app at http://127.0.0.1:8000/. The --reload flag ensures the server restarts upon any code changes, which is particularly useful during development. For production use, omit the --reload flag.
 
+### Screenshot of Web App
+
+| ![Screenshot of the Pose Classification Web App](assets/images/webapp.png) | 
+|:--:| 
+| *Screenshot of the Pose Classification Web App — not all output is shown* |
+
+## 9. Deployment using Docker and Google Cloud Run (GCR)
+
+### Managing Development and Production Docker Environments
+
+We are developing inside a Docker container using VSCode.
+
+- **VSCode Development Setup:**
+  - Utilizing the `.devcontainer/devcontainer.json` file, VSCode can be configured to use a Docker container as a development environment by specifying the Dockerfile and additional setup configurations.
+  - In the `devcontainer.json`, you can specify build arguments that are used when building the Docker image for your development container. For example:
+    ```json
+    {
+        "name": "Existing Dockerfile",
+        "context": "..",
+        "dockerFile": "../Dockerfile",
+        "build": {
+            "args": {
+                "ENVIRONMENT": "development"
+            }
+        },
+        "extensions": ["ms-python.python", "ms-toolsai.jupyter"],
+        "runArgs": ["-e", "ENVIRONMENT=development"]
+    }
+    ```
+    Here, `ENVIRONMENT` is set to `development`, which will be used as a build argument when VSCode builds the Docker image for your development container.
+
+- **Production Docker Setup:**
+  - When building a Docker image for production using the `docker build` command, unless an `--build-arg` is provided, the Dockerfile will use its default argument values (`production`, as set in the `Dockerfile`). Ensure that the default environment in the Dockerfile is set to production to automatically configure a production-ready image.
+  - Example Dockerfile snippet:
+    ```Dockerfile
+    ARG ENVIRONMENT=production
+    ENV APP_ENVIRONMENT=$ENVIRONMENT
+    ```
+    Here, unless an `ENVIRONMENT` build argument is provided, it defaults to `production`.
+
+- **Dependency Management:**
+  - Different requirement files are used to manage dependencies for development and production environments.
+  - `requirements.txt` contains the dependencies necessary to run the application in production.
+  - `requirements_dev.txt` includes additional dependencies needed for development purposes.
+  - In the Dockerfile, dependencies are installed conditionally based on the `ENVIRONMENT` argument:
+    ```Dockerfile
+    COPY requirements.txt requirements_dev.txt /code/
+    RUN if [ "$ENVIRONMENT" = "development" ]; then \
+            pip install --no-cache-dir -r requirements_dev.txt; \
+        else \
+            pip install --no-cache-dir -r requirements.txt; \
+        fi
+    ```
+    This ensures that only the necessary packages are installed in the respective environments.
+
+#### Note
+Ensure that your Dockerfile and setup scripts are configured to install dependencies and configure the environment appropriately based on the `ENVIRONMENT` argument to distinguish between development and production setups.
+
+
+### FastAPI Application in Docker
+
+- **FastAPI and Uvicorn:**
+  - FastAPI is a modern, fast web framework for building APIs with Python, based on standard Python type hints. Uvicorn, an ASGI server, is utilized to run the FastAPI application.
+  - Within a Docker container, the FastAPI application is started using Uvicorn in the startup script (`start.sh`). 
+
+- **Automatic Application Startup:**
+  - When the Docker image is built, the `CMD` instruction in the `Dockerfile` specifies what should be executed when a container is spun up from the image. In this context, it points to the `setup.sh` script.
+  - The `setup.sh` script, when executed, typically performs any necessary setup operations and then starts the application by calling another script, `start.sh`, which runs the Uvicorn server.
+  - Uvicorn will start the FastAPI application, making it accessible on a specified port (by default, 8000). If you've configured Uvicorn to run the app on, let's say, port 8000, and you've mapped that port to the host in your Docker run command, you should be able to access the application using the host's IP address or domain on that port.
+  - The application serves an HTML page (`templates/index.html`) that can be accessed via a web browser when you navigate to the root URL of the deployed application. This page is rendered and served by FastAPI when a GET request is made to the root endpoint of the API.
+
+The separation of `setup.sh` and `start.sh` might seem a bit redundant given the current simplicity of the scripts, but it offers flexibility and clarity, in case the project grows in complexity and more steps are needed in the setup process.
+
+### Getting Started with Google Cloud Run (GCR)
+
+- **Setting Up GCR:**
+  - Google Cloud Run is a fully managed compute platform by Google that automatically scales your containerized applications.
+  - To get started, you'll need a Google Cloud Platform account and a project set up on GCR.
+  - Visit the [Google Cloud Run Quickstart Guide](https://cloud.google.com/run/docs/quickstarts) for detailed steps on how to get started with deploying your first service. This guide provides a step-by-step walkthrough of deploying a sample application, which can be a helpful starting point for deploying your own applications.
+  - Ensure that you have the [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) installed and configured to manage resources on GCR. The SDK provides the `gcloud` command-line tool that allows you to interact with GCR and other Google Cloud services.
+  - Authenticate your `gcloud` CLI with your Google Cloud account and set the default project using the following commands:
+    ```
+    gcloud auth login
+    gcloud config set project [YOUR_PROJECT_ID]
+    ```
+    Replace `[YOUR_PROJECT_ID]` with the ID of your GCR project.
+  - Enable the Cloud Run API for your project by visiting the [Cloud Run API page](https://console.cloud.google.com/apis/library/run.googleapis.com) in the Cloud Console and clicking "ENABLE".
+  - Once set up, you can deploy containerized applications directly from your local machine to GCR using the `gcloud` CLI, as demonstrated in the deployment section of this guide.
+
+- **Installing Google Cloud SDK:**
+  - The Google Cloud SDK provides you with the ability to access Google Cloud resources from your terminal. It includes the `gcloud` command-line tool.
+  - You can install the Google Cloud SDK using various methods, including using package managers like Homebrew on macOS with `brew install google-cloud-sdk`.
+
+- **Authentication:**
+  - Ensure you authenticate your gcloud CLI with `gcloud auth login` and configure the SDK using `gcloud init`.
+
+- **Building and Deploying with GCR:**
+  - Docker images can be built locally or using Cloud Build, Google Cloud's serverless build platform.
+  - Once built, images need to be pushed to Google Container Registry before they can be deployed to GCR.
+  - Deploying to GCR involves specifying the image to use, the platform (managed or Anthos), and the region.
+
+#### Note
+Ensure to replace placeholders like `PROJECT_ID`, `IMAGE_NAME`, and `REGION` with actual values relevant to your project when executing commands.
+
+
+### Deployment Steps 
+Deploying the application using Docker and Google Cloud Run (GCR) involves building a Docker image, pushing it to Google Container Registry, and then deploying it to Google Cloud Run. Below are the steps and explanations for each command used in the process.
+
+### 9.1 Build the Docker Image
+
+```bash
+docker build --platform linux/amd64 -t gcr.io/PROJECT_ID/IMAGE_NAME .
+```
+
+- docker build: This command is used to build a Docker image.
+- --platform linux/amd64: Specifies the platform of the build output. Here, we're targeting Linux with AMD64 architecture. Necessary if developing on Apple Silicon Macs.
+- -t gcr.io/PROJECT_ID/IMAGE_NAME: Tags the Docker image with a name to refer to it later. The name is a path to the Google Container Registry (GCR) where the image will be stored.
+- .: Indicates that the build context is the current directory.
+
+### 9.2 Push the Docker Image to Google Container Registry (GCR)
+
+```bash
+docker push gcr.io/PROJECT_ID/IMAGE_NAME
+```
+- docker push: This command pushes a Docker image to a remote registry.
+- gcr.io/PROJECT_ID/IMAGE_NAME: Specifies the name (path) of the image, pointing to the GCR repository.
+
+### 9.3 Deploy the Docker Image using Google Cloud Run
+
+```bash
+gcloud run deploy SERVICE_NAME --image gcr.io/PROJECT_ID/IMAGE_NAME --platform managed --region REGION
+```
+
+- gcloud run deploy SERVICE_NAME: Deploys the application to Google Cloud Run with the service name SERVICE_NAME.
+- --image gcr.io/PROJECT_ID/IMAGE_NAME: Specifies the Docker image to deploy from GCR.
+- --platform managed: Indicates that the platform is fully managed by Google Cloud.
+- --region REGION: Specifies the region where the service will be deployed (e.g. `us-east1`).
+
+### Additional Commands for Debugging
+
+Entering the Docker Image:
+
+```bash
+docker run -p LOCAL_PORT:CONTAINER_PORT -it --entrypoint /bin/bash gcr.io/PROJECT_ID/IMAGE_NAME:latest
+```
+
+- docker run: Command to run a command in a new container.
+- -p LOCAL_PORT:CONTAINER_PORT: Maps LOCAL_PORT on the host to CONTAINER_PORT on the container.
+- -it: Allows you to interact with the container.
+- --entrypoint /bin/bash: Overrides the default entrypoint in the image to run Bash, allowing you to explore the container.
+- gcr.io/PROJECT_ID/IMAGE_NAME:latest: Specifies the Docker image to run.
+
+Inside the Docker container, you may want to run the application. To do this, make sure the startup script is executable and run it:
+
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+Now, the application should be running inside the Docker container and accessible at http://127.0.0.1:LOCAL_PORT/.
+
+Note: Ensure that the port you map to the host (e.g., LOCAL_PORT) is not being used by other applications to avoid conflicts. If Visual Studio Code or any other application is using port 8000, you can use a different port on the host, as shown in the example above.
+
 
 # Pipeline Usage Sequence
 
@@ -517,6 +682,16 @@ python run_pipelines.py --combine_feature_csv
 ### 6. Train Model
 ```bash
 python run_pipelines.py --train_model
+```
+
+### 7. Running Tests
+```bash
+pytest tests
+```
+
+### 8. FastAPI WebApp
+```bash
+uvicorn api.main:app --reload
 ```
 
 
