@@ -469,6 +469,11 @@ uvicorn api.main:app --reload
 
 This will start the server, and you can access the web app at http://127.0.0.1:8000/. The --reload flag ensures the server restarts upon any code changes, which is particularly useful during development. For production use, omit the --reload flag.
 
+### Screenshot of Web App
+
+| ![Screenshot of the Pose Classification Web App](assets/images/webapp.png) | 
+|:--:| 
+| *Screenshot of the Pose Classification Web App — not all output is shown* |
 
 ## 9. Deployment using Docker and Google Cloud Run (GCR)
 
