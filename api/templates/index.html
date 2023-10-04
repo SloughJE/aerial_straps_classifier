@@ -67,6 +67,20 @@
             padding: 0;
             overflow: hidden;
         }
+        button#testImageButton {
+            background-color: #CD853F; /* Peru */
+            color: #f0f0f0; /* Light text color */
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button#testImageButton:hover {
+            background-color: #B77A37; /* Slightly darker peru for hover */
+        }
+
 
     </style>
 </head>
@@ -79,14 +93,18 @@
     <p>Additionally, a visualization chart displays the confidence level for each pose classification.</p>
     <p>For more details, code, and information, check out the <a href="https://github.com/SloughJE/aerial_straps_classifier" target="_blank">project repository on GitHub</a>.</p>
     <br>
-    <p>Upload an image to proceed with pose annotation and classification.</p>
 
+    <button id="testImageButton" onclick="processTestImage()">Try with Test Image</button>
+    <br><br>
+
+    <p>Upload your image to proceed with pose annotation and classification.</p>
     <form id="uploadForm" enctype="multipart/form-data">
         <input type="file" id="fileInput" accept="image/*" required aria-label="Select an image to upload">
         <br>
         <input type="submit" value="Upload">
     </form>
-    <p id="feedbackMessage" style="color: red;"></p> 
+
+<p id="feedbackMessage" style="color: red;"></p> 
     <!-- These sections will be initially hidden -->
     <div id="results" style="display: none;">
         <div>
@@ -182,6 +200,48 @@
                 console.error(error); // Logs the error for debugging
             }
         };
+        async function processTestImage() {
+            const feedbackMessage = document.getElementById("feedbackMessage");
+            feedbackMessage.style.color = '#b0b0b0'; // Light gray color
+            feedbackMessage.textContent = "Annotating, creating features, and classifying pose with test image...";
+
+            try {
+                let response = await fetch("/test_image/");
+
+                if (!response.ok) {
+                    throw new Error(`Server responded with ${response.status}`);
+                }
+
+                let result = await response.json(); // Parse the result from the server
+
+                if (result.error) {
+                    feedbackMessage.style.color = 'red'; 
+                    feedbackMessage.textContent = result.error; 
+                } else if (result.original_filename && result.annotated_filename) {
+                    document.getElementById("originalImage").src = "/image_processing/" + result.original_filename.split("/").pop();
+                    let annotatedImagePath = "/image_processing/" + result.annotated_filename.split("/").pop();
+                    document.getElementById("annotatedImage").src = annotatedImagePath;
+                    document.getElementById("downloadLink").href = annotatedImagePath; // set download link
+                    if (result.predicted_pose) {
+                        document.getElementById("predictedPose").textContent = result.predicted_pose;
+                    }
+                    if (result.chart_filename) {
+                        let chartPath = "/image_processing/" + result.chart_filename.split("/").pop();
+                        document.getElementById("poseChart").src = chartPath;
+                    }
+                    document.getElementById("results").style.display = "block";
+                    feedbackMessage.textContent = "";
+                } else {
+                    feedbackMessage.style.color = 'red';
+                    feedbackMessage.textContent = "Failed to process test image.";
+                }
+
+            } catch (error) {
+                feedbackMessage.style.color = 'red';
+                feedbackMessage.textContent = "An error occurred while processing your request.";
+                console.error(error); // Logs the error for debugging
+            }
+        }
     </script>
 
 </body>

@@ -11,6 +11,7 @@ from mlflow.data.pandas_dataset import PandasDataset
 
 from .xgboost_model import train_xgb
 from ..utils.processing_utils import CustomLabelEncoder, convert_spatial_features_to_categorical
+
 logger = logging.getLogger(__name__)
 
 

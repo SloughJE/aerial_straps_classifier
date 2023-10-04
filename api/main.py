@@ -180,3 +180,33 @@ async def process_image(background_tasks: BackgroundTasks, file: UploadFile = Fi
         logger.error(f"An error occurred: {str(e)}")
         background_tasks.add_task(cleanup_files, UPLOAD_DIR, age_minutes=1)
         return {"error": str(e)}
+    
+@app.get("/test_image/")
+async def process_test_image(background_tasks: BackgroundTasks) -> Dict[str, Union[str, float]]:
+    try:
+        input_path = BASE_DIRECTORY / "test_images" / "DSC09032.JPG"
+        file_stem = input_path.stem
+
+        # Ensure the original image is in a web-accessible location
+        web_accessible_original = UPLOAD_DIR / f"{file_stem}.JPG"
+        shutil.copy(input_path, web_accessible_original)
+
+        df_features, og_img_path, annotated_img_path = extract_image_features(input_path)
+        pose_decoded, probabilities, pose_labels = get_pose_prediction(df_features, xgb_model, label_encoder)
+
+        chart_filename = UPLOAD_DIR / f"{file_stem}_chart.html"
+        create_probability_chart(probabilities, pose_labels, str(chart_filename), str(og_img_path))
+
+        background_tasks.add_task(cleanup_files, UPLOAD_DIR, age_minutes=1)
+
+        return {
+            "original_filename": str(web_accessible_original),
+            "annotated_filename": str(annotated_img_path),
+            "predicted_pose": pose_decoded,
+            "chart_filename": str(chart_filename)
+        }
+
+    except Exception as e:
+        logger.error(f"An error occurred: {str(e)}")
+        background_tasks.add_task(cleanup_files, UPLOAD_DIR, age_minutes=1)
+        return {"error": str(e)}
