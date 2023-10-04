@@ -29,6 +29,10 @@ This project intends to demonstrates a comprehensive approach to a machine learn
       - **Optuna Dashboard**: Visualize and analyze the optimization process interactively, gaining insights into hyperparameter relationships and their impact on the model's performance.
       - **MLflow**: Integrate with MLflow for comprehensive experiment tracking, logging details of each optimization trial and facilitating a deeper understanding of the model's behavior over different parameter configurations.
 - **FastAPI Web Application**: A web-based interface using FastAPI that allows users to upload media, predicts poses in real-time, and visualizes the confidence scores for each predicted pose. 
+- **Deployment**:
+  - **Dockerization**: Encapsulate the web application and its dependencies using Docker, ensuring consistent and reproducible deployment across various environments.
+  - **Google Cloud Run**: Deploy the Dockerized application to Google Cloud Run, leveraging its fully managed compute platform to automatically scale the app, ensuring optimal resource utilization and minimizing costs.
+  
 
 # Project Default Flow Diagram
 
