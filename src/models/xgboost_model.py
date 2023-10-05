@@ -32,7 +32,6 @@ def get_class_weights(le: CustomLabelEncoder) -> dict:
     return weights
 
 
-
 def optimize_hyperparams_optune(X_train: DataFrame, y_train: pd.Series, 
                  params: Dict[str, Any]) -> None:
     
@@ -168,8 +167,9 @@ def train_production_model(X_train: DataFrame, X_test: DataFrame, y_train: pd.Se
         input_example = X_test.iloc[:5] 
         model_predictions = prod_model.predict(input_example)
         signature = infer_signature(input_example, model_predictions)
-        mlflow.xgboost.log_model(xgb_model=prod_model, artifact_path=mlflow_prod_model_filepath, model_format='json', signature=signature)
-        
+        #mlflow.sklearn.log_model(xgb_model=prod_model, artifact_path=mlflow_prod_model_filepath, model_format='json', signature=signature)
+        mlflow.sklearn.log_model(sk_model=prod_model, artifact_path=mlflow_prod_model_filepath, serialization_format="pickle", signature=signature)
+
         ##### Saving model directly, will need to change when deploy!!!######
         print("\n***Saving model directly, will need to change when deploy!!!***\n")
         model_path = os.path.join(prod_model_dir, "xgb_prod_model.joblib")

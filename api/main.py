@@ -5,6 +5,7 @@ import time
 import uuid
 from pathlib import Path
 from typing import Dict, Tuple, Union
+import pickle
 
 import pandas as pd
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
@@ -25,7 +26,7 @@ app = FastAPI()
 # Constants
 BASE_DIRECTORY = Path(__file__).parent
 UPLOAD_DIR = BASE_DIRECTORY / "image_processing"
-MODEL_PATH = BASE_DIRECTORY.parent / "models" / "prod" / "xgb" / "xgb_prod_model.joblib"
+MODEL_PATH = BASE_DIRECTORY.parent / "models" / "prod" / "xgb" / "xgb_prod_model.pkl"
 LABEL_ENCODER_PATH = BASE_DIRECTORY.parent / "models" / "prod" / "xgb" / "label_encoder.json"
 
 # Create the directory if it doesn't exist
@@ -34,7 +35,9 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 TEMPLATES_DIR = BASE_DIRECTORY / "templates"
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
-xgb_model = load(MODEL_PATH)
+#xgb_model = load(MODEL_PATH)
+with open(MODEL_PATH, 'rb') as f:
+    xgb_model = pickle.load(f)
 
 with open(LABEL_ENCODER_PATH, 'r') as f:
     mappings = json.load(f)
