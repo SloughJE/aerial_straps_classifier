@@ -370,7 +370,18 @@ The training process is a nested run under the `Main_Pipeline_Run`, making full 
 
 5. **Deployment**: The model is now ready for deployment, with MLflow offering support for a variety of platforms, facilitating a smooth transition from development to production.
 
-This workflow ensures the model is trained with the optimal configuration and readied for deployment efficiently, benefitting from thorough tracking and management via the MLflow UI.
+### Avoiding MLflow Dependency in Production
+
+While MLflow provides a structured and comprehensive platform for model management, in our scenario we want to decouple the production environment from MLflow. This approach ensures minimal dependencies and enhanced robustness in our deployment pipeline. Here’s a generalized methodology:
+
+1. **Model Registration**: After model training, register your model using the MLflow UI and transition it to the "Production" stage, as mentioned above.
+
+2. **Model Extraction**: The registered production model is copied and stored in a static location that is accessible to the deployment environment. This step facilitates model deployment without having a direct integration with MLflow in production.
+A function named `copy_prod_model_to_destination` is utilized to achieve this, by copying the serialized model file from the MLflow artifacts directory to a designated location. This usage ensures that our production environment (e.g., a FastAPI web app) can load and utilize the model without having to interact directly with MLflow. By default, the latest registered production model is copied when this function is run.
+
+```bash
+python run_pipelines.py --copy_prod_model
+```
 
 
 ### 6.2 **Evaluation Metrics**
@@ -683,9 +694,15 @@ python run_pipelines.py --make_features
 python run_pipelines.py --combine_feature_csv
 ```
 
-### 6. Train Model
+### 6. Model Training and Deployment
+#### 6.1 Train Model
 ```bash
 python run_pipelines.py --train_model
+```
+
+#### 6.1 Copy Registered Production Model to Static Location
+```bash
+python run_pipelines.py --copy_prod_model
 ```
 
 ### 7. Running Tests
