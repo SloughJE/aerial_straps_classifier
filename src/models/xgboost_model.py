@@ -167,13 +167,7 @@ def train_production_model(X_train: DataFrame, X_test: DataFrame, y_train: pd.Se
         input_example = X_test.iloc[:5] 
         model_predictions = prod_model.predict(input_example)
         signature = infer_signature(input_example, model_predictions)
-        #mlflow.sklearn.log_model(xgb_model=prod_model, artifact_path=mlflow_prod_model_filepath, model_format='json', signature=signature)
         mlflow.sklearn.log_model(sk_model=prod_model, artifact_path=mlflow_prod_model_filepath, serialization_format="pickle", signature=signature)
-
-        ##### Saving model directly, will need to change when deploy!!!######
-        print("\n***Saving model directly, will need to change when deploy!!!***\n")
-        model_path = os.path.join(prod_model_dir, "xgb_prod_model.joblib")
-        joblib.dump(prod_model, model_path)
 
         # Save and log the label encoder
         label_encoder = params['label_encoder']
