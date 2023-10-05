@@ -11,7 +11,6 @@ import pandas as pd
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from joblib import load
 
 from src.features.extract_landmarks import extract_landmarks
 from src.features.make_features import extract_features_from_single_landmark_csv
