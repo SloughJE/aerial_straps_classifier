@@ -370,7 +370,17 @@ The training process is a nested run under the `Main_Pipeline_Run`, making full 
 
 5. **Deployment**: The model is now ready for deployment, with MLflow offering support for a variety of platforms, facilitating a smooth transition from development to production.
 
-This workflow ensures the model is trained with the optimal configuration and readied for deployment efficiently, benefitting from thorough tracking and management via the MLflow UI.
+### Avoiding MLflow Dependency in Production
+
+While MLflow provides a structured and comprehensive platform for model management, in our scenario we want to decouple the production environment from MLflow. This approach ensures minimal dependencies and enhanced robustness in our deployment pipeline. Here’s a generalized methodology:
+
+1. **Model Registration**: After model training, register your model using the MLflow UI and transition it to the "Production" stage, as detailed above.
+
+2. **Registered Production Model Deployment**: Using the function `copy_prod_model_to_destination`, the latest registered production model is copied and stored in a static location that is accessible to the deployment environment. This step facilitates model deployment without having to use the MLflow api, thus avoiding installing the package in the production environment. To run this step of the pipline:
+
+```bash
+python run_pipelines.py --copy_prod_model
+```
 
 
 ### 6.2 **Evaluation Metrics**
@@ -683,9 +693,15 @@ python run_pipelines.py --make_features
 python run_pipelines.py --combine_feature_csv
 ```
 
-### 6. Train Model
+### 6. Model Training and Deployment
+#### 6.1 Train Model
 ```bash
 python run_pipelines.py --train_model
+```
+
+#### 6.1 Copy Registered Production Model to Static Location
+```bash
+python run_pipelines.py --copy_prod_model
 ```
 
 ### 7. Running Tests

@@ -61,5 +61,6 @@ model_training:
   score_metric: f1_weighted  #f1_micro, f1_weighted, 'recall', 'precision', 'roc_auc', etc. as needed (not f1 for multiclass)
   train_prod_model: True
 
-  
-  
+production_model:
+  model_name: production_test
+  dest_path: models/prod/xgb/xgb_prod_model.pkl

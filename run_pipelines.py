@@ -7,6 +7,7 @@ from src.data.label import run_labeling, apply_mirror_labels
 from src.features.extract_landmarks import extract_landmarks_for_videos, extract_landmarks_for_photos
 from src.features.make_features import extract_features_from_landmarks, combine_csv_files
 from src.models.train_model import train_model_pipeline
+from src.utils.mlflow_prod_model import copy_prod_model_to_destination
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -76,6 +77,11 @@ if __name__ == "__main__":
         help="split train test, and train dev model, optionally optimize hyperparam, train prod model",
         action="store_true"
     )
+    parser.add_argument(
+        "--copy_prod_model", 
+        action="store_true", 
+        help="Copy latest MLflow registered production model to static filepath"
+    )
 
     args = parser.parse_args()
 
@@ -136,3 +142,7 @@ if __name__ == "__main__":
                 params['model_training']
             )
 
+        if args.copy_prod_model:
+            copy_prod_model_to_destination(
+                params['production_model']
+                )
