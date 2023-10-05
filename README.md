@@ -376,8 +376,7 @@ While MLflow provides a structured and comprehensive platform for model manageme
 
 1. **Model Registration**: After model training, register your model using the MLflow UI and transition it to the "Production" stage, as mentioned above.
 
-2. **Model Extraction**: The registered production model is copied and stored in a static location that is accessible to the deployment environment. This step facilitates model deployment without having a direct integration with MLflow in production.
-A function named `copy_prod_model_to_destination` is utilized to achieve this, by copying the serialized model file from the MLflow artifacts directory to a designated location. This usage ensures that our production environment (e.g., a FastAPI web app) can load and utilize the model without having to interact directly with MLflow. By default, the latest registered production model is copied when this function is run.
+2. **Registered Production Model Deployment**: Using the function `copy_prod_model_to_destination`, the latest registered production model is copied and stored in a static location that is accessible to the deployment environment. This step facilitates model deployment without having to use the MLflow api, thus avoiding installing the package in the production environment. To run this step of the pipline:
 
 ```bash
 python run_pipelines.py --copy_prod_model
