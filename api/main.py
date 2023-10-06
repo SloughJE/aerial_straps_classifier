@@ -25,7 +25,7 @@ app = FastAPI()
 # Constants
 BASE_DIRECTORY = Path(__file__).parent
 UPLOAD_DIR = BASE_DIRECTORY / "image_processing"
-MODEL_PATH = BASE_DIRECTORY.parent / "models" / "prod" / "xgb" / "xgb_prod_model.pkl"
+MODEL_PATH = BASE_DIRECTORY.parent / "models" / "prod" / "xgb" / "prod_model.pkl"
 LABEL_ENCODER_PATH = BASE_DIRECTORY.parent / "models" / "prod" / "xgb" / "label_encoder.json"
 
 # Create the directory if it doesn't exist

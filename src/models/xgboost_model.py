@@ -179,7 +179,8 @@ def train_production_model(X_train: DataFrame, X_test: DataFrame, y_train: pd.Se
                 'label_to_int': label_encoder.label_to_int,
                 'int_to_label': label_encoder.int_to_label
             }, f)
-
+        # Log the label encoder as an artifact in MLflow
+        mlflow.log_artifact(label_encoder_filepath, "label_encoder")
         logger.info("Production model trained and logged to MLFlow.")
 
         # Generate and save the feature importance visualization
