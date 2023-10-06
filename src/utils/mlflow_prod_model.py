@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def copy_prod_model_to_destination(params: dict):
     model_name = params['model_name']
-    dest_path = params['dest_path']
+    dest_path = params['dest_dir']
     
     client = mlflow.tracking.MlflowClient()
     model_version_details = client.get_latest_versions(model_name, stages=["Production"])

@@ -63,4 +63,4 @@ model_training:
 
 production_model:
   model_name: production_test
-  dest_path: models/prod/xgb/
+  dest_dir: models/prod/xgb/
