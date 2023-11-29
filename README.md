@@ -55,12 +55,10 @@ graph TD;
    R -->|Videos| S[Extract Video Landmarks];
    R -->|Photos| T[Extract Photo Landmarks];
    
-   S --> Z{Feature Creation};
+   S --> Z{Feature Creation\nJoint Angles, Spatial};
    T --> Z;
-   
-   Z --> U[Derive Joint Angles and Spatial Features];
-   
-   U --> AB{"Aggregate Individual Feature <br>and Label Files"};
+      
+   Z --> AB{"Aggregate Individual Feature <br>and Label Files"};
     
    AB --> AD{Model Training};
    
