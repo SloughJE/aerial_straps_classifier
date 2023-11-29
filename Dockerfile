@@ -1,4 +1,4 @@
-# Use a specific version for reproducibility
+# Specific version for reproducibility
 FROM python:3.8-slim-buster
 
 # Build-time argument for the environment setting
@@ -33,5 +33,5 @@ COPY . /code/
 # Make the script executable
 RUN chmod +x /code/setup.sh /code/start.sh
 
-# Specify the default thing to run when starting a container from this image
+# Specify the default code to run when starting a container from this image
 CMD ["/code/setup.sh"]
