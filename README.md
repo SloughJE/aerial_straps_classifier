@@ -14,9 +14,9 @@ Although many performances involve rapid transitions through poses or more advan
 | *back lever on aerial straps* |
 
 # Motivation for Project
-Having trained in aerial straps for several years and being a data scientist, I envisioned combining this discipline with machine learning technology. This took a tangible form when I experimented with the MediaPipe pose detection model on a video of myself, obtaining promising results. Subsequently, I had the idea to create an aerial straps classification model utilizing MediaPipe for feature extraction. 
+I've been training aerial straps for several years and wondered how I could combine this with data science. At some point I became aware of the MediaPipe pose detection model for classifiying yoga poses and thought that I could make something similar with aerial straps. I experimented with the MediaPipe pose detection model on a video of myself, obtaining promising results. Eventually, I decided to create an aerial straps classification model utilizing MediaPipe. 
 
-This project intends to demonstrates a comprehensive approach to a machine learning project, covering all stages from inception to deployment, which involves tasks such as data collection, data pre-processing, data labeling, exploratory data analysis (EDA), feature creation, model development, evaluation, hyperparameter tuning, and deployment.
+This project intends to demonstrate a comprehensive approach to a machine learning project, covering all stages from inception to deployment, which involves tasks such as data collection, data pre-processing, data labeling, exploratory data analysis (EDA), feature creation, model development, evaluation, hyperparameter tuning, and deployment.
 
 ## Project Highlights:
 
